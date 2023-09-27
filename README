@@ -1,0 +1,14 @@
+To run, execute the following command in the nudgie directory
+celery -A tasks worker -l INFO --pool=eventlet -Q nudgie
+the -A tasks indicates that the application is called "tasks". also this will tell it to look in the tasks.py file.
+Note too that I set this worker thread to pull from the nudgie queue.
+
+Then while the shit is running, run celery_test.py in order to test that events are getting triggered and handled properly.
+events are going to the nudgie queue, since i configured that in the tasks.py add method's annotation.
+
+You can check the existing queues by going to the rabbit CLI and running rabbitmqctl list_queues
+You can verify that the rabbit node/process if running by doing rabbitmqctl status
+if it's offline, you can do rabbitmqctl start_app
+To stop it or restart it, the following commands are relevant:
+rabbitmqctl shutdown (this shuts down rabbitMQ and its runtime)
+rabbitmqctl stop_app (stops rabbitMQ but leaves the runtime, aka the erlang VM, running)

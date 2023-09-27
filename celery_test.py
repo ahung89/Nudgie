@@ -1,5 +1,4 @@
 from tasks import add
-import time
 
 result = add.delay(4, 4)
 #result.ready() #this will return False
