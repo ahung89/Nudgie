@@ -5,7 +5,7 @@ from celery import Celery
 # Set the default Django settings module for the 'celery' program.
 # This sets the environment variable DJANGO_SETTINGS_MODULE to 'proj.settings', making
 # the settings module accessible.
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'proj.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'Nudgie.settings')
 
 app = Celery('Nudgie')
 

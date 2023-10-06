@@ -128,3 +128,4 @@ CELERY_BROKER_URL = 'pyamqp://guest@localhost//'\
 # RPC is a protocol that allows a program to execute a function on a remote machine and wait for the result.
 # In this context, it refers to the messaging style.
 CELERY_RESULT_BACKEND = 'rpc://'
+CELERY_TIMEZONE = 'America/Lima'
