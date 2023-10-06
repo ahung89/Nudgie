@@ -121,3 +121,10 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Celery Settings
+CELERY_BROKER_URL = 'pyamqp://guest@localhost//'\
+# this causes the reuslts to be sent as messages and not stored. good for development purposes.
+# RPC is a protocol that allows a program to execute a function on a remote machine and wait for the result.
+# In this context, it refers to the messaging style.
+CELERY_RESULT_BACKEND = 'rpc://'
