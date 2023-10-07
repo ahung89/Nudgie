@@ -1,0 +1,22 @@
+<span id="current-time">Loading time...</span>
+
+<form method="post">
+    {% csrf_token %}
+    <input type="datetime-local" name="schedule_time" step="1">
+    <button type="submit">Schedule Notification Task</button>
+</form>
+<p>{{ message }}</p>
+
+<script>
+    function updateClock() {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString();
+        document.getElementById('current-time').textContent = timeString;
+    }
+
+    // Update the clock immediately
+    updateClock();
+
+    // Update the clock every second
+    setInterval(updateClock, 1000);
+</script>

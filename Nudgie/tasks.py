@@ -19,3 +19,8 @@ def mul(x, y):
 @shared_task
 def xsum(numbers):
     return sum(numbers)
+
+@shared_task
+def notify(message):
+    print(f"ATTENTION! {message}")
+    return message
