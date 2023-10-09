@@ -4,7 +4,7 @@ To run, execute the following command in the nudgie directory
 py manage.py runserver
 
 2) Start Celery Worker
-celery -A tasks worker -l INFO --pool=eventlet -Q nudgie
+celery -A Nudgie worker -l INFO --pool=eventlet -Q nudgie
 
 the -A tasks indicates that the application is called "tasks". also this will tell it to look in the tasks.py file.
 Note too that I set this worker thread to pull from the nudgie queue.

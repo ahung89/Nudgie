@@ -2,7 +2,7 @@
 
 <form method="post">
     {% csrf_token %}
-    <input type="datetime-local" name="schedule_time" step="1">
+    <input type="datetime-local" name="schedule_time">
     <button type="submit">Schedule Notification Task</button>
 </form>
 <p>{{ message }}</p>

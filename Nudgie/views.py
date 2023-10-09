@@ -20,7 +20,7 @@ def schedule_task(request):
         # the second argument means to display the date in the format of YYYY-MM-DDTHH:MM, 
         # where T is the separator between date and time... for example 2021-07-01T12:00
         # T stands for time, and it's the ISO 8601 standard for datetime formatting
-        schedule_time = datetime.strptime(schedule_time_str, '%Y-%m-%dT%H:%M:%S')
+        schedule_time = datetime.strptime(schedule_time_str, '%Y-%m-%dT%H:%M')
 
         schedule, _ = CrontabSchedule.objects.get_or_create(
             minute=schedule_time.minute,
@@ -35,7 +35,7 @@ def schedule_task(request):
             name='Notification at ' + str(schedule_time),
             task='Nudgie.tasks.notify',
             args=json.dumps(['Task scheduled for ' + str(schedule_time) + ' completed']),
-            queue='celery'
+            queue='nudgie'
         )
         
         message = f"Task scheduled for {schedule_time}"

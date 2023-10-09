@@ -132,3 +132,4 @@ CELERY_BROKER_URL = 'pyamqp://guest@localhost//'\
 CELERY_RESULT_BACKEND = 'rpc://'
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 CELERY_TIMEZONE = 'America/Lima'
+CELERY_BEAT_SCHEDULE_FILENAME = './tmp/celerybeat-schedule'
