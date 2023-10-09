@@ -1,7 +1,7 @@
 from datetime import datetime
 import json
 from django.shortcuts import render
-from django_celery_beat.models import PeriodicTask, IntervalSchedule
+from django_celery_beat.models import PeriodicTask, CrontabSchedule
 from .tasks import add
 
 def add_numbers(request):
@@ -22,10 +22,21 @@ def schedule_task(request):
         # T stands for time, and it's the ISO 8601 standard for datetime formatting
         schedule_time = datetime.strptime(schedule_time_str, '%Y-%m-%dT%H:%M:%S')
 
-        schedule, _ = IntervalSchedule.objects.get_or_create(every=10, period=IntervalSchedule.SECONDS)
-        PeriodicTask.objects.create(interval=schedule, name='Notification at ' + 
-                                     str(schedule_time), task='Nudgie.tasks.notify',
-                                       args=json.dumps(['Task completed!']))
+        schedule, _ = CrontabSchedule.objects.get_or_create(
+            minute=schedule_time.minute,
+            hour=schedule_time.hour,
+            day_of_week='*',
+            day_of_month=schedule_time.day,
+            month_of_year=schedule_time.month,
+        )
+
+        PeriodicTask.objects.create(
+            crontab=schedule,
+            name='Notification at ' + str(schedule_time),
+            task='Nudgie.tasks.notify',
+            args=json.dumps(['Task scheduled for ' + str(schedule_time) + ' completed']),
+            queue='celery'
+        )
         
         message = f"Task scheduled for {schedule_time}"
     

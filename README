@@ -18,3 +18,8 @@ if it's offline, you can do rabbitmqctl start_app
 To stop it or restart it, the following commands are relevant:
 rabbitmqctl shutdown (this shuts down rabbitMQ and its runtime)
 rabbitmqctl stop_app (stops rabbitMQ but leaves the runtime, aka the erlang VM, running)
+
+admin
+username: drew
+email: awhhung@gmail.com
+password: bung
