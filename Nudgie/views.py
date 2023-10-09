@@ -23,7 +23,7 @@ def chatbot_view(request):
         bot_response = f"Hello, user! You said: '{user_input}'. Current time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
         conversation.append({'sender': 'Bot', 'message' : bot_response})
         request.session['conversation'] = conversation
-        return JsonResponse({'conversation': conversation})
+        # return JsonResponse({'conversation': conversation})
 
     print(f'IT AINT A GET ITS A {request.method=}')
     return render(request, 'chatbot.html', {'conversation': conversation})
