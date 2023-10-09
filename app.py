@@ -1,7 +1,5 @@
 #main app
 
-from venv import create
-import requests
 import db
 import openai
 
