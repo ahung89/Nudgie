@@ -1,6 +1,6 @@
 from datetime import datetime
 import json
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django_celery_beat.models import PeriodicTask, CrontabSchedule
 from .tasks import add
@@ -15,18 +15,31 @@ def add_numbers(request):
     return render(request, 'add.html', {'result': result})
 
 def chatbot_view(request):
-    conversation = request.session.get('conversation', [])
-    if request.method == 'GET':
-        user_input = request.POST.get('user_input')
-        conversation.append({'sender': 'User', 'message' : user_input})
+    return render(request, 'chatbot.html', {'conversation': request.session.get('conversation', [])})
+
+def chatbot_api(request):
+    if request.method == 'POST':
+        data = json.loads(request.body.decode('utf-8'))
+        user_input = data.get('message')
+
+        conversation = request.session.get('conversation', [])
+        conversation.append({'sender': 'User', 'message' : user_input})        
         #bot replies hardcoded for now
         bot_response = f"Hello, user! You said: '{user_input}'. Current time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
         conversation.append({'sender': 'Bot', 'message' : bot_response})
+        
         request.session['conversation'] = conversation
-        # return JsonResponse({'conversation': conversation})
 
-    print(f'IT AINT A GET ITS A {request.method=}')
-    return render(request, 'chatbot.html', {'conversation': conversation})
+        print(f"USER INPUT IS {user_input}")
+        return JsonResponse({
+            'sender': 'Bot',
+            'message': bot_response
+        })
+
+def clear_chat(request):
+    if 'conversation' in request.session:
+        del request.session['conversation']
+    return HttpResponseRedirect('/chatbot')
 
 def schedule_task(request):
     message = ''
