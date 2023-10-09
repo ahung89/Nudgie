@@ -4,6 +4,7 @@ from django.http import JsonResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django_celery_beat.models import PeriodicTask, CrontabSchedule
 from .tasks import add
+from .integrations.chatgpt import create_chat_gpt_request
 
 def add_numbers(request):
     result = None
@@ -25,7 +26,9 @@ def chatbot_api(request):
         conversation = request.session.get('conversation', [])
         conversation.append({'sender': 'User', 'message' : user_input})        
         #bot replies hardcoded for now
-        bot_response = f"Hello, user! You said: '{user_input}'. Current time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        #bot_response = f"Hello, user! You said: '{user_input}'. Current time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+
+        bot_response = create_chat_gpt_request(user_input)
         conversation.append({'sender': 'Bot', 'message' : bot_response})
         
         request.session['conversation'] = conversation
