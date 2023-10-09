@@ -1,5 +1,6 @@
 from datetime import datetime
 import json
+from django.http import JsonResponse
 from django.shortcuts import render
 from django_celery_beat.models import PeriodicTask, CrontabSchedule
 from .tasks import add
@@ -12,6 +13,20 @@ def add_numbers(request):
         result = add.delay(num1, num2).get()
     
     return render(request, 'add.html', {'result': result})
+
+def chatbot_view(request):
+    conversation = request.session.get('conversation', [])
+    if request.method == 'GET':
+        user_input = request.POST.get('user_input')
+        conversation.append({'sender': 'User', 'message' : user_input})
+        #bot replies hardcoded for now
+        bot_response = f"Hello, user! You said: '{user_input}'. Current time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        conversation.append({'sender': 'Bot', 'message' : bot_response})
+        request.session['conversation'] = conversation
+        return JsonResponse({'conversation': conversation})
+
+    print(f'IT AINT A GET ITS A {request.method=}')
+    return render(request, 'chatbot.html', {'conversation': conversation})
 
 def schedule_task(request):
     message = ''

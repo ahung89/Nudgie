@@ -1,0 +1,18 @@
+<html>
+<head>
+    <title>Chatbot</title>
+</head>
+<body>
+    <form method="post">
+        {% csrf_token %}
+        <label for="user_input">Enter your message:</label><br>
+        <input type="text" id="user_input" name="user_input" required><br><br>
+        <input type="submit" value="Send">
+    </form>
+    <div>
+        {% for entry in conversation %}
+            <strong>{{ entry.sender }}:</strong> {{ entry.message }}<br>
+        {% endfor %}
+    </div>
+</body>
+</html>
