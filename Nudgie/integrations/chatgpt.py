@@ -1,7 +1,8 @@
 import openai
 
-CHAT_GPT_MODEL = "gpt-3.5-turbo"
+#CHAT_GPT_MODEL = "gpt-3.5-turbo"
 CHAT_GPT_MODEL = "gpt-4"
+
 INITIAL_CONVO_SYSTEM_PROMPT = """You are an AI Accountability named Nudgie. Your task is to figure
 out what goal the user wants to work on, break these down into regularly habits, and create a schedule
 of reminders. As soon as the user says hello or hi or greets you, you will kick off this process with a series
@@ -28,21 +29,59 @@ related to productivity or to things you mentioned, become firmer and more brusq
 completely brushing aside anything he says which doesnt further the goal of creating a schedule, after 3 irrelevant
 messages. If he still doesn't get the hint, end the conversation and tell him to come back when he's ready to commit to a schedule.
 
-As soon as you have enough information to do so, output the reminder schedule to the user as a crontab but with every field labeled explicitly
-(e.g. minute, hour, day_of_month, etc). Confirm with the user that it is correct and continue the process
-until the user confirms that it is correct. Have the output be in a python list of objects which contain the 
-following keys: "minute", "hour", "day_of_week", "day_of_month", "month_of_year". The format should be easily pluggable
-into python code with minimal processing.
+As soon as you have enough information to do so, confirm the schedule with the user. Continue the exchange for as long
+as necessary and make adjustments as needed until the user confirms.
 
-Once the user confirms: for the next reply, on the very first line put ONLY the final crontab schedule in the format described above.
-Then do two newlines, and put your reply to the user there.
+Once the user confirms the schedule, call the register_notifications function with the confirmed schedule as the parameter.
+This will be used by python code by the way.
 """
 
+FUNCTIONS = [
+    {
+        "name": "register_notifications",
+        "description": "register notifications with celery using completed crontab for schedule",
+        "parameters": {
+            "type": "object",
+            "description": "list of crontab objects",
+            "properties": {
+                "schedules": {
+                    "type": "array",
+                    "description": "list of crontab objects",
+                    "items": {
+                        "type": "object",
+                        "description": "crontab object",
+                        "properties": {
+                            "minute": {
+                                "type": "string",
+                                "description": "crontab minute field"
+                            },
+                            "hour": {
+                                "type": "string",
+                                "description": "crontab hour field"
+                            },
+                            "day_of_week": {
+                                "type": "string",
+                                "description": "crontab day of week field"
+                            },
+                            "day_of_month": {
+                                "type": "string",
+                                "description": "crontab day of month field"
+                            },
+                            "month_of_year": {
+                                "type": "string",
+                                "description": "crontab month of year field"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+]
 
 def goal_creation_convo(prompt, messages):
-    # need to keep track of conversational history, need to not stop until the crontab is created.
     messages.append({"role": "user", "content": prompt})
-    response = openai.ChatCompletion.create(model=CHAT_GPT_MODEL, messages=messages)
+    response = openai.ChatCompletion.create(model=CHAT_GPT_MODEL, messages=messages, functions=FUNCTIONS)
     responseText = response.choices[0].message.content
     messages.append({"role": "assistant", "content": responseText})
     return responseText
@@ -54,17 +93,3 @@ def get_goal_creation_base_message():
     creation conversation
     """
     return [{"role": "system", "content": INITIAL_CONVO_SYSTEM_PROMPT}]
-
-
-# def create_chat_gpt_request(prompt):
-#     response = openai.ChatCompletion.create(
-#         model=CHAT_GPT_MODEL,
-#         messages=[
-#         {"role": "system", "content": """You are an AI Accountability named Nudgie. Your task is to figure
-#             out what goal the user wants to work on, break these down into regularly habits,
-#             and then create a schedule of reminders to achieve this goal."""},
-#         {"role": "user", "content": prompt},
-#         ]
-#     )
-
-#     return response.choices[0].message.content

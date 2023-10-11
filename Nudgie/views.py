@@ -29,9 +29,7 @@ def chatbot_api(request):
         # api_messages = request.session.get('api_messages', get_goal_creation_base_message())
         api_messages = cache.get('api_messages', get_goal_creation_base_message())
 
-        print(f'api messages before completions call = {api_messages}')
         bot_response = goal_creation_convo(user_input, api_messages)
-        print(f'api messages after completions call = {api_messages}')
 
         # update the displayed conversation, save it to the session. the session persists
         # across requests and is cleared when the browser is closed.
