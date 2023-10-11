@@ -50,7 +50,7 @@ def chatbot_api(request):
             'message': bot_response
         })
 
-def clear_chat(request):
+def clear_chat():
     cache.clear()
     return HttpResponseRedirect('/chatbot')
 
