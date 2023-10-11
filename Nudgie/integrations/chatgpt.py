@@ -79,12 +79,31 @@ FUNCTIONS = [
     }
 ]
 
+
 def goal_creation_convo(prompt, messages):
     messages.append({"role": "user", "content": prompt})
-    response = openai.ChatCompletion.create(model=CHAT_GPT_MODEL, messages=messages, functions=FUNCTIONS)
+    response = openai.ChatCompletion.create(
+        model=CHAT_GPT_MODEL, messages=messages, functions=FUNCTIONS
+    )
+
+    if 'function_call' in response.choices[0].message:
+        messages.append({
+            "role": "user",
+            "content": ("[programmatically generated message, not from the actual user] "
+                       "The function call is complete and the notifications "
+                        "are scheduled. Inform the user that the notifications "
+                        "are scheduled, and provide some words of encouragement "
+                        "and excitement about getting started.")
+        })
+        response = openai.ChatCompletion.create(
+            model=CHAT_GPT_MODEL, messages=messages, functions=FUNCTIONS
+        )
+
+
     responseText = response.choices[0].message.content
     messages.append({"role": "assistant", "content": responseText})
     return responseText
+
 
 
 def get_goal_creation_base_message():
