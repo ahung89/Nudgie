@@ -4,7 +4,8 @@ from django.http import JsonResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django_celery_beat.models import PeriodicTask, CrontabSchedule
 from .tasks import add
-from .integrations.chatgpt import create_chat_gpt_request
+from .integrations.chatgpt import get_goal_creation_base_message, goal_creation_convo
+from django.core.cache import cache
 
 def add_numbers(request):
     result = None
@@ -16,32 +17,41 @@ def add_numbers(request):
     return render(request, 'add.html', {'result': result})
 
 def chatbot_view(request):
-    return render(request, 'chatbot.html', {'conversation': request.session.get('conversation', [])})
+    conversation = request.session.get('conversation', [])
+    return render(request, 'chatbot.html', {'conversation': conversation})
 
+#for the initial conversation flow
 def chatbot_api(request):
     if request.method == 'POST':
         data = json.loads(request.body.decode('utf-8'))
         user_input = data.get('message')
 
+        # api_messages = request.session.get('api_messages', get_goal_creation_base_message())
+        api_messages = cache.get('api_messages', get_goal_creation_base_message())
+
+        print(f'api messages before completions call = {api_messages}')
+        bot_response = goal_creation_convo(user_input, api_messages)
+        print(f'api messages after completions call = {api_messages}')
+
+        # update the displayed conversation, save it to the session. the session persists
+        # across requests and is cleared when the browser is closed.
         conversation = request.session.get('conversation', [])
         conversation.append({'sender': 'User', 'message' : user_input})        
-        #bot replies hardcoded for now
-        #bot_response = f"Hello, user! You said: '{user_input}'. Current time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-
-        bot_response = create_chat_gpt_request(user_input)
         conversation.append({'sender': 'Bot', 'message' : bot_response})
-        
-        request.session['conversation'] = conversation
 
-        print(f"USER INPUT IS {user_input}")
+        cache.set('conversation', conversation)
+        #request.session['conversation'] = conversation
+
+        cache.set('api_messages', api_messages)
+        #request.session['api_messages'] = api_messages
+
         return JsonResponse({
             'sender': 'Bot',
             'message': bot_response
         })
 
 def clear_chat(request):
-    if 'conversation' in request.session:
-        del request.session['conversation']
+    cache.clear()
     return HttpResponseRedirect('/chatbot')
 
 def schedule_task(request):

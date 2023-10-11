@@ -1,6 +1,6 @@
 {% load static %}
-
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
     <title>Chatbot</title>
 </head>
@@ -8,7 +8,7 @@
     <form id="chatForm">
         {% csrf_token %}
         <label for="user_input">Enter your message:</label><br>
-        <input type="text" id="user_input" name="user_input" required><br><br>
+        <textarea id="user_input" name="user_input" rows="10" cols="50" required></textarea><br><br>
         <input type="submit" value="Send">
     </form>
     <a href="{% url 'clear_chat' %}">Clear Chat</a>

@@ -1,10 +1,10 @@
 document.addEventListener("DOMContentLoaded", function(){
     document.getElementById("chatForm").addEventListener("submit", function(event){
         event.preventDefault();
-        var user_input = document.getElementById("user_input").value;
+        let textField = document.getElementById("user_input");
+        var user_input = textField.value;
+        textField.value = ""; // clear the text field
         let csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-        //  hacky as hell, would be better to include this in the response rather than hardcoding but this is all placeholder so its ok.
-        //  i'll do it later lol
         var conversationDiv = document.getElementById("conversation");
         conversationDiv.innerHTML += "<strong>User :</strong> " + user_input + "<br>";
         fetch('/chatbot/api/', {
