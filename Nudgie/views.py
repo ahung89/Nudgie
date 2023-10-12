@@ -6,6 +6,7 @@ from django_celery_beat.models import PeriodicTask, CrontabSchedule
 from .tasks import add
 from .integrations.chatgpt import get_goal_creation_base_message, goal_creation_convo
 from django.core.cache import cache
+from .util.reminder_scheduler import schedule_tasks_from_crontab_list
 
 def add_numbers(request):
     result = None
@@ -52,6 +53,7 @@ def clear_chat():
     cache.clear()
     return HttpResponseRedirect('/chatbot')
 
+# TODO: get rid of this soon, was just to test the celery beat integration.
 def schedule_task(request):
     message = ''
     if request.method =='POST':

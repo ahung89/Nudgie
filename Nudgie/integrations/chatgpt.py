@@ -1,4 +1,6 @@
 import openai
+import json
+from ..util.reminder_scheduler import schedule_tasks_from_crontab_list
 
 #CHAT_GPT_MODEL = "gpt-3.5-turbo"
 CHAT_GPT_MODEL = "gpt-4"
@@ -62,14 +64,6 @@ FUNCTIONS = [
                             "day_of_week": {
                                 "type": "string",
                                 "description": "crontab day of week field"
-                            },
-                            "day_of_month": {
-                                "type": "string",
-                                "description": "crontab day of month field"
-                            },
-                            "month_of_year": {
-                                "type": "string",
-                                "description": "crontab month of year field"
                             }
                         }
                     }
@@ -87,6 +81,7 @@ def goal_creation_convo(prompt, messages):
     )
 
     if 'function_call' in response.choices[0].message:
+        schedule_tasks_from_crontab_list(json.loads(response.choices[0].message.function_call.arguments)['schedules'])
         messages.append({
             "role": "user",
             "content": ("[programmatically generated message, not from the actual user] "
