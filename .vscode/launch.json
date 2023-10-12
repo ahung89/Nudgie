@@ -14,6 +14,21 @@
             ],
             "django": true,
             "justMyCode": true
+        },
+        {
+            "name": "Celery Worker",
+            "type": "python",
+            "request": "launch",
+            "module": "celery",
+            "args": ["-A", "Nudgie", "worker", "-l", "INFO", "--pool=eventlet",
+                 "-Q", "nudgie"]
+        },
+        {
+            "name": "Celery Beat",
+            "type": "python",
+            "request": "launch",
+            "module": "celery",
+            "args": ["-A", "Nudgie", "beat", "-l", "info", "--scheduler", "django_celery_beat.schedulers:DatabaseScheduler"]
         }
     ]
 }
