@@ -27,7 +27,8 @@ def chatbot_api(request):
         data = json.loads(request.body.decode('utf-8'))
         user_input = data.get('message')
 
-        # api_messages = request.session.get('api_messages', get_goal_creation_base_message())
+        print(f"RECEIVED INPUT. User input: {user_input}")
+
         api_messages = cache.get('api_messages', get_goal_creation_base_message())
 
         bot_response = goal_creation_convo(user_input, api_messages)
@@ -39,10 +40,8 @@ def chatbot_api(request):
         conversation.append({'sender': 'Bot', 'message' : bot_response})
 
         cache.set('conversation', conversation)
-        #request.session['conversation'] = conversation
 
         cache.set('api_messages', api_messages)
-        #request.session['api_messages'] = api_messages
 
         return JsonResponse({
             'sender': 'Bot',

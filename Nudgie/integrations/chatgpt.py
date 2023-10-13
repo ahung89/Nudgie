@@ -35,6 +35,15 @@ As soon as you have enough information to do so, confirm the schedule with the u
 as necessary and make adjustments as needed until the user confirms.
 
 Once the user confirms the schedule, call the register_notifications function with the confirmed schedule as the parameter.
+Make sure to also generate a one-word identifier for the goal (e.g. become_bachata_pro, get_in_shape, etc) as well as a one-word
+identifier for the task (e.g. practice_dance, lift_weights, etc). There can be different reminders for different tasks for the same goal.\
+Pay attention to any extra info the user tells you which may be relevant to crafting the reminder, and take brief notes of it and
+put those notes in the reminder_notes field of the reminder_data object. These notes are for you, not for the user, and they will
+be fed into the prompt which helps generate the reminder text. These should be things that are relevant to motivation or ability
+to complete the task, e.g. the user telling you that he often has trouble on mondays due to hectic work schedule.
+
+Also do not explicitly talk about the function calls to the user, this is an internal detail.
+
 This will be used by python code by the way.
 """
 
@@ -53,22 +62,49 @@ FUNCTIONS = [
                         "type": "object",
                         "description": "crontab object",
                         "properties": {
-                            "minute": {
-                                "type": "string",
-                                "description": "crontab minute field"
+                            "crontab" : {
+                                "type": "object",
+                                "description": "crontab object",
+                                "properties": {
+                                    "minute": {
+                                        "type": "string",
+                                        "description": "crontab minute field"
+                                    },
+                                    "hour": {
+                                        "type": "string",
+                                        "description": "crontab hour field"
+                                    },
+                                    "day_of_week": {
+                                        "type": "string",
+                                        "description": "crontab day of week field"
+                                    }
+                                }
                             },
-                            "hour": {
-                                "type": "string",
-                                "description": "crontab hour field"
+                            "reminder_data": {
+                                "type": "object",
+                                "description": "data needed to carry out the reminder.",
+                                "properties": {
+                                    "goal_name": {
+                                        "type": "string",
+                                        "description": "one-word ID identifying the goal."
+                                    },
+                                    "task_name": {
+                                        "type": "string",
+                                        "description": "one-word ID identifying the task. e.g. for"
+                                            " goal 'get_6_pack', the task name might be 'lift_weights'."
+                                    },
+                                    "reminder_notes": {
+                                        "type": "string",
+                                        "description": "bullet points of relevant info for this reminder. example:"
+                                        "- user is tired in the evenings\n- user is unmotivated on mondays and could use tough love\n- etc."
+                                    }
+                                },
                             },
-                            "day_of_week": {
-                                "type": "string",
-                                "description": "crontab day of week field"
-                            }
                         }
                     }
                 }
-            }
+            },
+            "required": ["minute", "hour", "day_of_week", "goal_name", "task_name"]
         }
     }
 ]
