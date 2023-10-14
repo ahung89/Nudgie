@@ -6,7 +6,7 @@ from django_celery_beat.models import PeriodicTask, CrontabSchedule
 from .tasks import add
 from .integrations.chatgpt import get_goal_creation_base_message, goal_creation_convo
 from django.core.cache import cache
-from .util.reminder_scheduler import schedule_tasks_from_crontab_list
+from .models import Conversation
 
 def add_numbers(request):
     result = None
@@ -20,6 +20,9 @@ def add_numbers(request):
 def chatbot_view(request):
     conversation = request.session.get('conversation', [])
     return render(request, 'chatbot.html', {'conversation': conversation})
+
+def get_user_conversation(user):
+    return Conversation.objects.filter(user=user).order_by('timestamp') 
 
 #for the initial conversation flow
 def chatbot_api(request):
@@ -40,8 +43,15 @@ def chatbot_api(request):
         conversation.append({'sender': 'Bot', 'message' : bot_response})
 
         cache.set('conversation', conversation)
-
         cache.set('api_messages', api_messages)
+
+        user_convo_entry = Conversation(user=request.user, message_type='user',
+                                         content=user_input)
+        ai_convo_entry = Conversation(user=request.user, message_type='assistant',
+                                       content=bot_response)
+
+        user_convo_entry.save()
+        ai_convo_entry.save()
 
         return JsonResponse({
             'sender': 'Bot',
