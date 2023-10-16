@@ -4,7 +4,7 @@ function handleSubmit() {
     textField.value = ""; // clear the text field
     let csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
     var conversationDiv = document.getElementById("conversation");
-    conversationDiv.innerHTML += "<strong>User :</strong> " + user_input + "<br>";
+    conversationDiv.innerHTML += "<strong>user :</strong> " + user_input + "<br>";
     fetch('/chatbot/api/', {
         method: 'POST',
         headers: {

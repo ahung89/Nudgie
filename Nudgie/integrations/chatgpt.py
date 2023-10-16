@@ -1,3 +1,4 @@
+from webbrowser import get
 import openai
 import json
 from ..util.reminder_scheduler import schedule_tasks_from_crontab_list
@@ -112,8 +113,10 @@ FUNCTIONS = [
 
 def goal_creation_convo(prompt, messages):
     messages.append({"role": "user", "content": prompt})
+    api_messages = [get_system_message()]
+    api_messages.extend(messages)
     response = openai.ChatCompletion.create(
-        model=CHAT_GPT_MODEL, messages=messages, functions=FUNCTIONS
+        model=CHAT_GPT_MODEL, messages=api_messages, functions=FUNCTIONS
     )
 
     if 'function_call' in response.choices[0].message:
@@ -137,9 +140,9 @@ def goal_creation_convo(prompt, messages):
 
 
 
-def get_goal_creation_base_message():
+def get_system_message():
     """
     Generates a base message array which contains the system prompt for the goal
     creation conversation
     """
-    return [{"role": "system", "content": INITIAL_CONVO_SYSTEM_PROMPT}]
+    return {"role": "system", "content": INITIAL_CONVO_SYSTEM_PROMPT}

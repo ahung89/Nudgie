@@ -14,7 +14,7 @@
     <a href="{% url 'clear_chat' %}">Clear Chat</a>
     <div id="conversation">
         {% for entry in conversation %}
-            <strong>{{ entry.sender }}:</strong> {{ entry.message }}<br>
+            <strong>{{ entry.role }}:</strong> {{ entry.content }}<br>
         {% endfor %}
     </div>
     <script src="{% static 'js/chatbot.js' %}"></script>

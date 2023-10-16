@@ -1,10 +1,12 @@
 from datetime import datetime
 import json
+import re
+from urllib import request
 from django.http import JsonResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django_celery_beat.models import PeriodicTask, CrontabSchedule
 from .tasks import add
-from .integrations.chatgpt import get_goal_creation_base_message, goal_creation_convo
+from .integrations.chatgpt import get_system_message, goal_creation_convo
 from django.core.cache import cache
 from .models import Conversation
 
@@ -18,11 +20,16 @@ def add_numbers(request):
     return render(request, 'add.html', {'result': result})
 
 def chatbot_view(request):
-    conversation = request.session.get('conversation', [])
-    return render(request, 'chatbot.html', {'conversation': conversation})
+    load_conversation(request)
+    return render(request, 'chatbot.html', {'conversation': request.session['conversation']})
 
-def get_user_conversation(user):
-    return Conversation.objects.filter(user=user).order_by('timestamp') 
+def load_conversation(request):
+    #check if the convo is in the request session
+    if 'conversation' not in request.session:
+        lines = Conversation.objects.filter(user=request.user).order_by('timestamp') 
+        convo = [{"role": line.message_type,
+                        "content": line.content} for line in lines]
+        request.session['conversation'] = convo
 
 #for the initial conversation flow
 def chatbot_api(request):
@@ -31,19 +38,10 @@ def chatbot_api(request):
         user_input = data.get('message')
 
         print(f"RECEIVED INPUT. User input: {user_input}")
+        load_conversation(request)
+        convo = request.session['conversation']
 
-        api_messages = cache.get('api_messages', get_goal_creation_base_message())
-
-        bot_response = goal_creation_convo(user_input, api_messages)
-
-        # update the displayed conversation, save it to the session. the session persists
-        # across requests and is cleared when the browser is closed.
-        conversation = request.session.get('conversation', [])
-        conversation.append({'sender': 'User', 'message' : user_input})        
-        conversation.append({'sender': 'Bot', 'message' : bot_response})
-
-        cache.set('conversation', conversation)
-        cache.set('api_messages', api_messages)
+        bot_response = goal_creation_convo(user_input, convo)
 
         user_convo_entry = Conversation(user=request.user, message_type='user',
                                          content=user_input)
@@ -52,14 +50,17 @@ def chatbot_api(request):
 
         user_convo_entry.save()
         ai_convo_entry.save()
+        request.session['conversation'] = convo
 
         return JsonResponse({
-            'sender': 'Bot',
+            'sender': 'assistant',
             'message': bot_response
         })
 
-def clear_chat():
-    cache.clear()
+def clear_chat(request):
+    #clear the conversation from the session
+    request.session['conversation'] = []
+    Conversation.objects.filter(user=request.user).delete()
     return HttpResponseRedirect('/chatbot')
 
 # TODO: get rid of this soon, was just to test the celery beat integration.
