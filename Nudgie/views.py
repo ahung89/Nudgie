@@ -41,7 +41,7 @@ def chatbot_api(request):
         load_conversation(request)
         convo = request.session['conversation']
 
-        bot_response = goal_creation_convo(user_input, convo)
+        bot_response = goal_creation_convo(user_input, convo, request.user.id)
 
         user_convo_entry = Conversation(user=request.user, message_type='user',
                                          content=user_input)

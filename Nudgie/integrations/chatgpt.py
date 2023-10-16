@@ -111,7 +111,7 @@ FUNCTIONS = [
 ]
 
 
-def goal_creation_convo(prompt, messages):
+def goal_creation_convo(prompt, messages, user_id):
     messages.append({"role": "user", "content": prompt})
     api_messages = [get_system_message()]
     api_messages.extend(messages)
@@ -120,7 +120,7 @@ def goal_creation_convo(prompt, messages):
     )
 
     if 'function_call' in response.choices[0].message:
-        schedule_tasks_from_crontab_list(json.loads(response.choices[0].message.function_call.arguments)['schedules'])
+        schedule_tasks_from_crontab_list(json.loads(response.choices[0].message.function_call.arguments)['schedules'], user_id)
         messages.append({
             "role": "user",
             "content": ("[programmatically generated message, not from the actual user] "
