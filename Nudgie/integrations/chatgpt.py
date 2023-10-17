@@ -89,7 +89,7 @@ FUNCTIONS = [
                                         "type": "string",
                                         "description": "one-word ID identifying the goal."
                                     },
-                                    "task_name": {
+                                    "habit_name": {
                                         "type": "string",
                                         "description": "one-word ID identifying the task. e.g. for"
                                             " goal 'get_6_pack', the task name might be 'lift_weights'."

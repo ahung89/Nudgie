@@ -1,9 +1,9 @@
 from django_celery_beat.models import PeriodicTask, CrontabSchedule
 import json
 from croniter import croniter
-from datetime import datetime, date
+from datetime import datetime
 from Nudgie import models
-from Nudgie.models import Task as NudgieTask
+from Nudgie.models import NudgieTask
 
 CRONTAB_FIELDS = ['minute', 'hour', 'day_of_week']
 
@@ -41,7 +41,7 @@ def schedule_tasks_from_crontab_list(crontab_list, user_id):
         
         NudgieTask.objects.create(
             user = models.User.objects.get(id=user_id), #TODO: just pass in the user object?
-            habit_name = notif['reminder_data']['task_name'],
+            task_name = notif['reminder_data']['task_name'],
             goal_name = notif['reminder_data']['goal_name'],
             due_date = due_date
         )
