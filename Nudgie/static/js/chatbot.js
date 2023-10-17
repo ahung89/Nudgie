@@ -1,10 +1,17 @@
 function handleSubmit() {
     let textField = document.getElementById("user_input");
-    var user_input = textField.value;
+    date_input = document.getElementById('date_input').value;
+
+    let user_input = textField.value;
+    
     textField.value = ""; // clear the text field
+
     let csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
     var conversationDiv = document.getElementById("conversation");
     conversationDiv.innerHTML += "<strong>user :</strong> " + user_input + "<br>";
+
+    // fetch is nice because it is asynchronous, similar to AJAX but
+    // with a nicer API and built into the browser.
     fetch('/chatbot/api/', {
         method: 'POST',
         headers: {
@@ -12,7 +19,8 @@ function handleSubmit() {
             'X-CSRFToken': csrfToken
         },
         body: JSON.stringify({
-            message: user_input
+            message: user_input,
+            datetime: date_input
         })
     })
     .then(response => response.json())

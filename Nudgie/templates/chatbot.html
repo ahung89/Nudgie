@@ -9,9 +9,11 @@
         {% csrf_token %}
         <label for="user_input">Enter your message:</label><br>
         <textarea id="user_input" name="user_input" rows="10" cols="50" required></textarea><br><br>
+        <input type="datetime-local" name="schedule_time">
         <input type="submit" value="Send">
     </form>
     <a href="{% url 'reset_user_data' %}">Clear User Data</a>
+    <br><br>
     <div id="conversation">
         {% for entry in conversation %}
             <strong>{{ entry.role }}:</strong> {{ entry.content }}<br>

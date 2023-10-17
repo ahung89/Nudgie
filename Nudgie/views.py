@@ -28,14 +28,6 @@ def load_conversation(request):
                         "content": line.content} for line in lines]
         request.session['conversation'] = convo
 
-def initial_chatbot_flow(request):
-    #
-    return None
-
-def standard_chatbot_flow(request):
-    #
-    return None
-
 #for the initial conversation flow
 def chatbot_api(request):
     if request.method == 'POST':
