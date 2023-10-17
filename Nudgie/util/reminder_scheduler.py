@@ -1,7 +1,9 @@
 from django_celery_beat.models import PeriodicTask, CrontabSchedule
 import json
 from croniter import croniter
-from datetime import datetime, time
+from datetime import datetime, date
+from Nudgie import models
+from Nudgie.models import Task as NudgieTask
 
 CRONTAB_FIELDS = ['minute', 'hour', 'day_of_week']
 
@@ -32,11 +34,18 @@ def schedule_tasks_from_crontab_list(crontab_list, user_id):
         cron_schedule, _ = CrontabSchedule.objects.get_or_create(**notif_cron)
 
         due_date = calculate_due_date(notif_cron)
-        print(f"CALCULATING DUE DATE: {due_date}")
 
-        #TODO: verify that this is an easily de-serializable format for the date
-        notif['reminder_data']['due_date'] = due_date.strftime('%Y-%m-%d %H:%M:%S')
+        notif['reminder_data']['due_date'] = due_date.isoformat()
+        #to deserialize, call date.fromisoformat(due_date) (date being imported from datetime)
+        #you can then directly use this to query the DB.
         
+        NudgieTask.objects.create(
+            user = models.User.objects.get(id=user_id), #TODO: just pass in the user object?
+            habit_name = notif['reminder_data']['task_name'],
+            goal_name = notif['reminder_data']['goal_name'],
+            due_date = due_date
+        )
+
         PeriodicTask.objects.create(
             crontab=cron_schedule,
             name='Notification at ' + str(notif_cron['hour']) + ':' + str(notif_cron['minute'])
