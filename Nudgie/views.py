@@ -1,5 +1,6 @@
 from datetime import datetime
 import json
+import pytz
 from django.http import JsonResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django_celery_beat.models import PeriodicTask, CrontabSchedule
@@ -33,6 +34,12 @@ def chatbot_api(request):
     if request.method == 'POST':
         data = json.loads(request.body.decode('utf-8'))
         user_input = data.get('message')
+        datetime_str = data.get('datetime')
+
+        naive_datetime = datetime.strptime(datetime_str, "%Y-%m-%dT%H:%M")
+        print(naive_datetime)
+        my_timezone = pytz.timezone('UTC')  # Replace with your time zone
+        aware_datetime = my_timezone.localize(naive_datetime)
 
         print(f"RECEIVED INPUT. User input: {user_input}")
         load_conversation(request)
