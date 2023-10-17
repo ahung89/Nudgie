@@ -48,7 +48,7 @@ def schedule_tasks_from_crontab_list(crontab_list, user_id):
 
         PeriodicTask.objects.create(
             crontab=cron_schedule,
-            name='Notification at ' + str(notif_cron['hour']) + ':' + str(notif_cron['minute'])
+            name=str(user_id) + '_Notification at ' + str(notif_cron['hour']) + ':' + str(notif_cron['minute'])
               + ' on ' + str(notif_cron['day_of_week']),
             task='Nudgie.tasks.notify',
             args=json.dumps(['Task scheduled for ' + str(notif_cron['hour']) + ':'

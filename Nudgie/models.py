@@ -23,3 +23,5 @@ class NudgieTask(models.Model):
     task_name = models.CharField(max_length=100)
     goal_name = models.CharField(max_length=100)
     due_date = models.DateField()
+    completed = models.BooleanField(default=False)
+

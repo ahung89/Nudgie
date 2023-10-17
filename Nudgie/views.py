@@ -4,8 +4,8 @@ from django.http import JsonResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django_celery_beat.models import PeriodicTask, CrontabSchedule
 from .tasks import add
-from .integrations.chatgpt import goal_creation_convo
-from .models import Conversation
+from .integrations.chatgpt import handle_convo
+from .models import Conversation, NudgieTask
 
 def add_numbers(request):
     result = None
@@ -28,6 +28,14 @@ def load_conversation(request):
                         "content": line.content} for line in lines]
         request.session['conversation'] = convo
 
+def initial_chatbot_flow(request):
+    #
+    return None
+
+def standard_chatbot_flow(request):
+    #
+    return None
+
 #for the initial conversation flow
 def chatbot_api(request):
     if request.method == 'POST':
@@ -38,7 +46,11 @@ def chatbot_api(request):
         load_conversation(request)
         convo = request.session['conversation']
 
-        bot_response = goal_creation_convo(user_input, convo, request.user.id)
+        #determine which flow to use
+        has_nudgie_tasks = NudgieTask.objects.filter(user=request.user).exists()
+        print(f"HAS NUDGIE TASKS? {has_nudgie_tasks}")
+
+        bot_response = handle_convo(user_input, convo, request.user.id, has_nudgie_tasks)
 
         user_convo_entry = Conversation(user=request.user, message_type='user',
                                          content=user_input)
@@ -54,10 +66,13 @@ def chatbot_api(request):
             'message': bot_response
         })
 
-def clear_chat(request):
-    #clear the conversation from the session
+def reset_user_data(request):
     request.session['conversation'] = []
     Conversation.objects.filter(user=request.user).delete()
+    NudgieTask.objects.filter(user=request.user).delete()
+    PeriodicTask.objects.filter(name__startswith=f'{request.user.id}').delete()
+    CrontabSchedule.objects.exclude(periodictask__isnull=False).delete()
+
     return HttpResponseRedirect('/chatbot')
 
 # TODO: get rid of this soon, was just to test the celery beat integration.
@@ -80,7 +95,7 @@ def schedule_task(request):
 
         PeriodicTask.objects.create(
             crontab=schedule,
-            name='Notification at ' + str(schedule_time),
+            name=request.user.username + 'Notification at ' + str(schedule_time),
             task='Nudgie.tasks.notify',
             args=json.dumps(['Task scheduled for ' + str(schedule_time) + ' completed']),
             queue='nudgie'

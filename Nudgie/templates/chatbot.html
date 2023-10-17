@@ -11,7 +11,7 @@
         <textarea id="user_input" name="user_input" rows="10" cols="50" required></textarea><br><br>
         <input type="submit" value="Send">
     </form>
-    <a href="{% url 'clear_chat' %}">Clear Chat</a>
+    <a href="{% url 'reset_user_data' %}">Clear User Data</a>
     <div id="conversation">
         {% for entry in conversation %}
             <strong>{{ entry.role }}:</strong> {{ entry.content }}<br>
