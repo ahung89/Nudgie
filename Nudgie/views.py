@@ -1,13 +1,10 @@
 from datetime import datetime
 import json
-import re
-from urllib import request
 from django.http import JsonResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django_celery_beat.models import PeriodicTask, CrontabSchedule
 from .tasks import add
-from .integrations.chatgpt import get_system_message, goal_creation_convo
-from django.core.cache import cache
+from .integrations.chatgpt import goal_creation_convo
 from .models import Conversation
 
 def add_numbers(request):
