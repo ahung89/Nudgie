@@ -1,7 +1,28 @@
 from django_celery_beat.models import PeriodicTask, CrontabSchedule
 import json
+from croniter import croniter
+from datetime import datetime, time
 
 CRONTAB_FIELDS = ['minute', 'hour', 'day_of_week']
+
+def get_next_run_time(crontab):
+    iter = croniter(crontab, datetime.now())
+    next_run_time = iter.get_next(datetime)
+    return next_run_time
+
+def end_of_day(dt):
+    return dt.replace(hour=23, minute=59, second=59)
+
+def calculate_due_date(crontab):
+    """Given a crontab object, calculate the next due date for the task.
+    By default, the due date is the end of the day of the next time the crontab
+    will run. For example, if the crontab is set to run at 9:00 AM on Monday,
+    the due date will be 11:59 PM on Monday.
+    """
+    #convert to string form
+    cron_str = f"{crontab['minute']} {crontab['hour']} * * {crontab['day_of_week']}"
+    print(f'CRON_STR IS {cron_str}')
+    return end_of_day(get_next_run_time(cron_str))
 
 def schedule_tasks_from_crontab_list(crontab_list, user_id):
     for notif in crontab_list:
@@ -9,6 +30,12 @@ def schedule_tasks_from_crontab_list(crontab_list, user_id):
         notif['reminder_data']['user_id'] = user_id
 
         cron_schedule, _ = CrontabSchedule.objects.get_or_create(**notif_cron)
+
+        due_date = calculate_due_date(notif_cron)
+        print(f"CALCULATING DUE DATE: {due_date}")
+
+        #TODO: verify that this is an easily de-serializable format for the date
+        notif['reminder_data']['due_date'] = due_date.strftime('%Y-%m-%d %H:%M:%S')
         
         PeriodicTask.objects.create(
             crontab=cron_schedule,
