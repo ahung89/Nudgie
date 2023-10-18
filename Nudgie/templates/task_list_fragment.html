@@ -1,0 +1,15 @@
+<h2>Upcoming Tasks</h2>
+<ul>
+    {% for task in tasks %}
+        <li>
+            <strong>Name:</strong> {{ task.name }}<br>
+            <strong>Goal name:</strong> <!-- ... --> <br>
+            <strong>Habit name:</strong> <!-- ... --> <br>
+            <strong>Next Scheduled Run:</strong> <!-- Convert cron expression to actual time. You might need some custom logic for this. --> <br>
+            <strong>Cron Expression:</strong> {{ task.crontab }} <br>
+            <strong>Task Name:</strong> {{ task.task }} <br>
+            <!-- Add a button to trigger the task -->
+            <button onclick="triggerTask('{{ task.id }}')">Trigger Task</button>
+        </li>
+    {% endfor %}
+</ul>

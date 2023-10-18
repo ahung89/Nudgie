@@ -36,6 +36,10 @@ def load_conversation(request):
                         "content": line.content} for line in lines]
         request.session['conversation'] = convo
 
+def get_task_list(request):
+    tasks = PeriodicTask.objects.all().order_by('crontab__minute', 'crontab__hour', 'crontab__day_of_week')
+    return render(request, 'task_list_fragment.html', {'tasks': tasks})
+
 #for the initial conversation flow
 def chatbot_api(request):
     if request.method == 'POST':

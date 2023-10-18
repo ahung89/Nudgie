@@ -25,5 +25,6 @@ urlpatterns = [
     path('chatbot/', views.chatbot_view, name='chatbot'),
     path('chatbot/api/', views.chatbot_api, name='chatbot_api'),
     path('reset_user_data/', views.reset_user_data, name='reset_user_data'),
+    path('get_task_list/', views.get_task_list, name='task_list'),
     path('accounts/', include('allauth.urls'))
 ]
