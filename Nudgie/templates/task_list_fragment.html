@@ -1,3 +1,5 @@
+{% load custom_filters %}
+
 <h2>Upcoming Tasks</h2>
 <span id="last-configured-server-time">
     <span style="font-weight: bold;">Last Configured Server Time:</span> {{ server_time}}
@@ -5,10 +7,9 @@
 <ul>
     {% for task in tasks %}
         <li>
-            <strong>Name:</strong> {{ task.name }}<br>
-            <strong>Goal name:</strong> <!-- ... --> <br>
-            <strong>Habit name:</strong> <!-- ... --> <br>
+            <strong id="task_name">Habit name:</strong> {{ task.kwargs|get_attr_from_json:"task_name" }} <br>
             <strong>Next Scheduled Run:</strong> {{ task.next_run_time }}<br>
+            <strong id="due_date">Due Date:</strong> {{ task.kwargs|get_attr_from_json:"due_date" }}<br>
             <strong>Cron Expression:</strong> {{ task.crontab }} <br>
             <strong>Task Name:</strong> {{ task.task }} <br>
             <!-- Add a button to trigger the task -->

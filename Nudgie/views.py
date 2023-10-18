@@ -6,7 +6,6 @@ from django.http import JsonResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django_celery_beat.models import PeriodicTask, CrontabSchedule
 from django.contrib.auth.models import User
-from requests import get
 
 from Nudgie.util.reminder_scheduler import get_next_run_time
 from Nudgie.util.time import get_time
@@ -62,6 +61,9 @@ def get_task_list_display(request):
     return render(request, 'task_list_fragment.html',
                    {'tasks': get_task_list_with_next_run(request.user),
                     'server_time': get_time(request.user).strftime('%Y-%m-%d %H:%M:%S')})
+
+def trigger_task(request):
+    return None
 
 #for the initial conversation flow
 def chatbot_api(request):
