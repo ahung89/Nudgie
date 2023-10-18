@@ -7,16 +7,16 @@ from Nudgie.models import NudgieTask
 
 CRONTAB_FIELDS = ['minute', 'hour', 'day_of_week']
 
-def get_next_run_time(crontab):
-    iter = croniter(crontab, datetime.now())
+def get_next_run_time(crontab_str : str):
+    iter = croniter(crontab_str, datetime.now())
     next_run_time = iter.get_next(datetime)
     return next_run_time
 
 def end_of_day(dt):
     return dt.replace(hour=23, minute=59, second=59)
 
-def calculate_due_date(crontab):
-    """Given a crontab object, calculate the next due date for the task.
+def calculate_due_date(crontab : dict[str, str]):
+    """Given a crontab object (key-val pairs), calculate the next due date for the task.
     By default, the due date is the end of the day of the next time the crontab
     will run. For example, if the crontab is set to run at 9:00 AM on Monday,
     the due date will be 11:59 PM on Monday.

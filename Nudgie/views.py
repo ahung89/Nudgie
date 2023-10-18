@@ -1,9 +1,13 @@
 from datetime import datetime
 import json
+from django.forms import model_to_dict
 import pytz
 from django.http import JsonResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django_celery_beat.models import PeriodicTask, CrontabSchedule
+from requests import get
+
+from Nudgie.util.reminder_scheduler import get_next_run_time
 from .tasks import add
 from .integrations.chatgpt import handle_convo
 from .models import Conversation, NudgieTask
@@ -17,11 +21,25 @@ def add_numbers(request):
     
     return render(request, 'add.html', {'result': result})
 
+def get_task_list_with_next_run():
+    """helper view for getting list of PeriodicTasks for the test tool"""
+    tasks = PeriodicTask.objects.all().order_by('crontab__minute', 'crontab__hour', 'crontab__day_of_week')
+
+    return [
+        {
+            **model_to_dict(task),
+            'next_run_time': get_next_run_time(f"{task.crontab.minute} {task.crontab.hour} "
+                                               f"{task.crontab.day_of_month} {task.crontab.month_of_year} "
+                                               f"{task.crontab.day_of_week}")
+        }
+        for task in tasks
+    ]
+
 def chatbot_view(request):
     load_conversation(request)
 
     #for testing tool
-    tasks = PeriodicTask.objects.all().order_by('crontab__minute', 'crontab__hour', 'crontab__day_of_week')
+    tasks = get_task_list_with_next_run()
 
     return render(request, 'chatbot.html', {
         'conversation': request.session['conversation'],
@@ -36,9 +54,8 @@ def load_conversation(request):
                         "content": line.content} for line in lines]
         request.session['conversation'] = convo
 
-def get_task_list(request):
-    tasks = PeriodicTask.objects.all().order_by('crontab__minute', 'crontab__hour', 'crontab__day_of_week')
-    return render(request, 'task_list_fragment.html', {'tasks': tasks})
+def get_task_list_display(request):
+    return render(request, 'task_list_fragment.html', {'tasks': get_task_list_with_next_run()})
 
 #for the initial conversation flow
 def chatbot_api(request):

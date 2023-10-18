@@ -5,7 +5,7 @@
             <strong>Name:</strong> {{ task.name }}<br>
             <strong>Goal name:</strong> <!-- ... --> <br>
             <strong>Habit name:</strong> <!-- ... --> <br>
-            <strong>Next Scheduled Run:</strong> <!-- Convert cron expression to actual time. You might need some custom logic for this. --> <br>
+            <strong>Next Scheduled Run:</strong> {{ task.next_run_time }}<br>
             <strong>Cron Expression:</strong> {{ task.crontab }} <br>
             <strong>Task Name:</strong> {{ task.task }} <br>
             <!-- Add a button to trigger the task -->
