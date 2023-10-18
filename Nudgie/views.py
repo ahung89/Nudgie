@@ -43,6 +43,7 @@ def chatbot_view(request):
 
     return render(request, 'chatbot.html', {
         'conversation': request.session['conversation'],
+        'server_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         'tasks': tasks
     })
 

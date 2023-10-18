@@ -6,7 +6,6 @@ function handleSubmit(input_val) {
         date_input = new Date().toISOString().slice(0, 19);
     }
 
-
     let csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
     var conversationDiv = document.getElementById('conversation');
     conversationDiv.innerHTML += '<strong>user :</strong> ' + input_val + '<br>';
