@@ -2,7 +2,7 @@ from datetime import datetime
 import json
 from django.forms import model_to_dict
 import pytz
-from django.http import JsonResponse, HttpResponseRedirect
+from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django_celery_beat.models import PeriodicTask, CrontabSchedule
 from django.contrib.auth.models import User
@@ -63,7 +63,8 @@ def get_task_list_display(request):
                     'server_time': get_time(request.user).strftime('%Y-%m-%d %H:%M:%S')})
 
 def trigger_task(request):
-    return None
+    print("TRIGGERING DA TASK")
+    return HttpResponse('')
 
 #for the initial conversation flow
 def chatbot_api(request):

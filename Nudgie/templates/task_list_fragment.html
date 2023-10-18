@@ -4,7 +4,7 @@
 <span id="last-configured-server-time">
     <span style="font-weight: bold;">Last Configured Server Time:</span> {{ server_time}}
 </span>
-<ul>
+<ul id="task_list">
     {% for task in tasks %}
         <li>
             <strong id="task_name">Habit name:</strong> {{ task.kwargs|get_attr_from_json:"task_name" }} <br>
@@ -13,7 +13,12 @@
             <strong>Cron Expression:</strong> {{ task.crontab }} <br>
             <strong>Task Name:</strong> {{ task.task }} <br>
             <!-- Add a button to trigger the task -->
-            <button onclick="triggerTask('{{ task.id }}')">Trigger Task</button>
+            <button 
+                class="trigger-btn"
+                data-task-name="{{ task.kwargs|get_attr_from_json:'task_name' }}"
+                data-due-date="{{ task.kwargs|get_attr_from_json:'due_date' }}">
+                    Trigger Task
+            </button>
         </li>
     {% endfor %}
 </ul>

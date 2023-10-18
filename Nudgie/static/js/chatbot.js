@@ -67,4 +67,34 @@ document.addEventListener('DOMContentLoaded', function(){
             standardSubmissionWrapper();
         }
     });
+
+    document.getElementById('task_list').addEventListener('click', function(e) {
+        
+        if (e.target && e.target.classList.contains('trigger-btn')) {
+            
+            const task_name = e.target.getAttribute('data-task-name');
+            const due_date = e.target.getAttribute('data-due-date');
+            
+            triggerPeriodicTask(task_name, due_date);
+        }
+    });
 });
+
+function triggerPeriodicTask(task_name, due_date) {
+    // Handle the task trigger based on the task details
+    console.log(`Task Name: ${task_name}, Due Date: ${due_date}`);
+
+    let csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    fetch('/trigger_task/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify({
+            task_name: task_name,
+            due_date: due_date
+        })
+    })
+}
