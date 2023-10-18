@@ -1,0 +1,18 @@
+/* Main container/wrapper */
+.main-container {
+    display: flex;
+    flex-direction: row;
+}
+
+/* Left content (Chatbox, Date control, etc.) */
+.left-content {
+    flex: 1; /* This will ensure it takes up all the available space on the left */
+    display: flex;
+    flex-direction: column; /* If you want the inner items stacked vertically */
+    align-items: start; /* Align inner items to the start (left) */
+}
+
+/* Right content (Periodic Tasks) */
+.right-content {
+    width: 250px; /* Example width, adjust as needed */
+}

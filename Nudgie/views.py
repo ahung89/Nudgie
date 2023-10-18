@@ -19,7 +19,14 @@ def add_numbers(request):
 
 def chatbot_view(request):
     load_conversation(request)
-    return render(request, 'chatbot.html', {'conversation': request.session['conversation']})
+
+    #for testing tool
+    tasks = PeriodicTask.objects.all().order_by('crontab__minute', 'crontab__hour', 'crontab__day_of_week')
+
+    return render(request, 'chatbot.html', {
+        'conversation': request.session['conversation'],
+        'tasks': tasks
+    })
 
 def load_conversation(request):
     #check if the convo is in the request session

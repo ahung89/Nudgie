@@ -3,22 +3,47 @@
 <html lang="en">
 <head>
     <title>Chatbot</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
 <body>
-    <form id="chatForm">
-        {% csrf_token %}
-        <label for="user_input">Enter your message:</label><br>
-        <textarea id="user_input" name="user_input" rows="10" cols="50" required></textarea><br><br>
-        <input id="date_input" type="datetime-local" name="schedule_time">
-        <input type="submit" value="Send">
-    </form>
-    <a href="{% url 'reset_user_data' %}">Clear User Data</a>
-    <br><br>
-    <div id="conversation">
-        {% for entry in conversation %}
-            <strong>{{ entry.role }}:</strong> {{ entry.content }}<br>
-        {% endfor %}
+    <div class="main-container">
+        <div class="left-content">
+            <form id="chatForm">
+                {% csrf_token %}
+                <label for="user_input">Enter your message:</label><br>
+                <textarea id="user_input" name="user_input" rows="10" cols="50" required></textarea><br><br>
+                <input id="date_input" type="datetime-local" name="schedule_time">
+                <input type="submit" value="Send">
+            </form>
+            <a href="{% url 'reset_user_data' %}">Clear User Data</a>
+            <br><br>
+            <div id="conversation">
+                {% for entry in conversation %}
+                    <strong>{{ entry.role }}:</strong> {{ entry.content }}<br>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="right-content">
+            <div id="tasks">
+                <h2>Upcoming Tasks</h2>
+                <ul>
+                    {% for task in tasks %}
+                        <li>
+                            <strong>Name:</strong> {{ task.name }}<br>
+                            <strong>Goal name:</strong> <!-- ... --> <br>
+                            <strong>Habit name:</strong> <!-- ... --> <br>
+                            <strong>Next Scheduled Run:</strong> <!-- Convert cron expression to actual time. You might need some custom logic for this. --> <br>
+                            <strong>Cron Expression:</strong> {{ task.crontab }} <br>
+                            <strong>Task Name:</strong> {{ task.task }} <br>
+                            <!-- Add a button to trigger the task -->
+                            <button onclick="triggerTask('{{ task.id }}')">Trigger Task</button>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
     </div>
+
     <script src="{% static 'js/chatbot.js' %}"></script>
 </body>
 </html>
