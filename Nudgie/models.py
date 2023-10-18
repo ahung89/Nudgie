@@ -22,6 +22,6 @@ class NudgieTask(models.Model):
     #richer detailing.
     task_name = models.CharField(max_length=100)
     goal_name = models.CharField(max_length=100)
-    due_date = models.DateField()
+    due_date = models.DateTimeField()
     completed = models.BooleanField(default=False)
 

@@ -1,7 +1,12 @@
 function handleSubmit() {
     let textField = document.getElementById("user_input");
     date_input = document.getElementById('date_input').value;
-
+    // Check if date_input is empty
+    if (!date_input) {
+        // Populate with the current datetime in the correct format, including seconds
+        date_input = new Date().toISOString().slice(0, 19);
+    }
+  
     let user_input = textField.value;
     
     textField.value = ""; // clear the text field

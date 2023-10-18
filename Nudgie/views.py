@@ -36,10 +36,13 @@ def chatbot_api(request):
         user_input = data.get('message')
         datetime_str = data.get('datetime')
 
-        naive_datetime = datetime.strptime(datetime_str, "%Y-%m-%dT%H:%M")
+        # get the passed-in datetime into the same form as the date in the NudgieTask
+        naive_datetime = datetime.strptime(datetime_str, "%Y-%m-%dT%H:%M:%S")
         print(naive_datetime)
         my_timezone = pytz.timezone('UTC')  # Replace with your time zone
         aware_datetime = my_timezone.localize(naive_datetime)
+        formatted_datetime = aware_datetime.strftime('%Y-%m-%dT%H:%M:%S')
+        print(formatted_datetime)
 
         print(f"RECEIVED INPUT. User input: {user_input}")
         load_conversation(request)
