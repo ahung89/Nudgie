@@ -38,6 +38,14 @@ function handleSubmit(input_val) {
     });
 }
 
+function standardSubmissionWrapper() {
+    let textField = document.getElementById('user_input');
+    let user_input = textField.value;
+    textField.value = ''; // clear the text field
+
+    handleSubmit(user_input);
+}
+
 document.getElementById('test-button').addEventListener('click', function(event){
     let textField = document.getElementById('user_input');
     textField.value = '';
@@ -48,17 +56,15 @@ document.getElementById('test-button').addEventListener('click', function(event)
 document.addEventListener('DOMContentLoaded', function(){
     document.getElementById('chatForm').addEventListener('submit', function(event){
         event.preventDefault();
-        let textField = document.getElementById('user_input');
-        let user_input = textField.value;
-        textField.value = ''; // clear the text field
 
-        handleSubmit(user_input);
+        standardSubmissionWrapper();
     });
 
     document.getElementById('user_input').addEventListener('keydown', function(event) { 
         if (event.key == 'Enter' && !event.shiftKey) {
             event.preventDefault();
-            handleSubmit();
+
+            standardSubmissionWrapper();
         }
     });
 });

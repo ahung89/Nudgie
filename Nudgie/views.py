@@ -5,9 +5,11 @@ import pytz
 from django.http import JsonResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django_celery_beat.models import PeriodicTask, CrontabSchedule
+from django.contrib.auth.models import User
 from requests import get
 
 from Nudgie.util.reminder_scheduler import get_next_run_time
+from Nudgie.util.time import get_time
 from .tasks import add
 from .integrations.chatgpt import handle_convo
 from .models import Conversation, NudgieTask
@@ -21,16 +23,17 @@ def add_numbers(request):
     
     return render(request, 'add.html', {'result': result})
 
-def get_task_list_with_next_run():
+def get_task_list_with_next_run(user : User):
     """helper view for getting list of PeriodicTasks for the test tool"""
     tasks = PeriodicTask.objects.all().order_by('crontab__minute', 'crontab__hour', 'crontab__day_of_week')
 
     return [
         {
             **model_to_dict(task),
-            'next_run_time': get_next_run_time(f"{task.crontab.minute} {task.crontab.hour} "
+            'next_run_time': get_next_run_time(crontab_str = f"{task.crontab.minute} {task.crontab.hour} "
                                                f"{task.crontab.day_of_month} {task.crontab.month_of_year} "
-                                               f"{task.crontab.day_of_week}")
+                                               f"{task.crontab.day_of_week}",
+                                               user = user)
         }
         for task in tasks
     ]
@@ -39,11 +42,11 @@ def chatbot_view(request):
     load_conversation(request)
 
     #for testing tool
-    tasks = get_task_list_with_next_run()
+    tasks = get_task_list_with_next_run(request.user)
 
     return render(request, 'chatbot.html', {
         'conversation': request.session['conversation'],
-        'server_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        'server_time': get_time(request.user).strftime('%Y-%m-%d %H:%M:%S'),
         'tasks': tasks
     })
 
@@ -56,7 +59,9 @@ def load_conversation(request):
         request.session['conversation'] = convo
 
 def get_task_list_display(request):
-    return render(request, 'task_list_fragment.html', {'tasks': get_task_list_with_next_run()})
+    return render(request, 'task_list_fragment.html',
+                   {'tasks': get_task_list_with_next_run(request.user),
+                    'server_time': get_time(request.user).strftime('%Y-%m-%d %H:%M:%S')})
 
 #for the initial conversation flow
 def chatbot_api(request):
@@ -66,6 +71,8 @@ def chatbot_api(request):
         datetime_str = data.get('datetime')
 
         # get the passed-in datetime into the same form as the date in the NudgieTask
+        # this passed-in datetime is the user-side time. don't replace it with the mocked value for the
+        # server time since this simulates what the user sends in when he texts.
         naive_datetime = datetime.strptime(datetime_str, "%Y-%m-%dT%H:%M:%S")
         print(naive_datetime)
         my_timezone = pytz.timezone('UTC')  # Replace with your time zone
@@ -81,7 +88,7 @@ def chatbot_api(request):
         has_nudgie_tasks = NudgieTask.objects.filter(user=request.user).exists()
         print(f"HAS NUDGIE TASKS? {has_nudgie_tasks}")
 
-        bot_response = handle_convo(user_input, convo, request.user.id, has_nudgie_tasks)
+        bot_response = handle_convo(user_input, convo, request.user, has_nudgie_tasks)
 
         user_convo_entry = Conversation(user=request.user, message_type='user',
                                          content=user_input)

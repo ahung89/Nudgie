@@ -7,7 +7,7 @@ from Nudgie.config.chatgpt_inputs import (INITIAL_CONVO_FUNCTIONS,
                                           ONGOING_CONVO_FUNCTIONS,
                                           CHAT_GPT_MODEL)
 
-def handle_convo(prompt, messages, user_id, has_nudgie_tasks):
+def handle_convo(prompt, messages, user, has_nudgie_tasks):
     messages.append({"role": "user", "content": prompt})
     api_messages = [get_system_message_standard() if has_nudgie_tasks
                         else get_system_message_for_initial_convo()]
@@ -21,7 +21,7 @@ def handle_convo(prompt, messages, user_id, has_nudgie_tasks):
     if 'function_call' in response.choices[0].message:
         schedule_tasks_from_crontab_list(json.loads(response.choices[0].message.
                                                     function_call.arguments)['schedules'],
-                                                      user_id)
+                                                      user)
         messages.append({
             "role": "user",
             "content": ("[programmatically generated message, not from the actual user] "
