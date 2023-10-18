@@ -25,3 +25,7 @@ class NudgieTask(models.Model):
     due_date = models.DateTimeField()
     completed = models.BooleanField(default=False)
 
+class MockedTime(models.Model):
+    # the CASCADE value means that if the user is deleted, all of their mocked times will be deleted
+    user = models.ForeignKey(User, related_name='mocked_times', on_delete=models.CASCADE)
+    mocked_time = models.DateTimeField()
