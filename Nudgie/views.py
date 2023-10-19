@@ -9,7 +9,7 @@ from django.contrib.auth.models import User
 
 from Nudgie.util.reminder_scheduler import get_next_run_time
 from Nudgie.util.time import get_time
-from .tasks import add
+from .tasks import add, handle_reminder
 from .integrations.chatgpt import handle_convo
 from .models import Conversation, NudgieTask
 
@@ -64,6 +64,11 @@ def get_task_list_display(request):
 
 def trigger_task(request):
     print("TRIGGERING DA TASK")
+    task_lookup_vals = json.loads(request.body.decode('utf-8'))
+    result = handle_reminder.apply_async((task_lookup_vals['task_name'],
+                                         task_lookup_vals['due_date']), queue='nudgie').get()
+    print(f"RESULT: {result}")
+
     return HttpResponse('')
 
 #for the initial conversation flow

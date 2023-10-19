@@ -24,3 +24,8 @@ def xsum(numbers):
 def notify(message):
     print(f"ATTENTION! {message}")
     return message
+
+@shared_task
+def handle_reminder(task_name, due_date):
+    print(f"handling reminder for task {task_name} due on {due_date}")
+    return task_name
