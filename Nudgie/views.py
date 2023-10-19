@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime, timedelta
 import json
 from django.forms import model_to_dict
 import pytz
@@ -8,10 +8,13 @@ from django_celery_beat.models import PeriodicTask, CrontabSchedule
 from django.contrib.auth.models import User
 
 from Nudgie.util.reminder_scheduler import get_next_run_time
-from Nudgie.util.time import get_time
+from Nudgie.util.time import get_time, set_time
 from .tasks import add, handle_reminder
 from .integrations.chatgpt import handle_convo
 from .models import Conversation, NudgieTask
+
+# how many seconds to fast forward by when triggering a reminder for testing
+TEST_FAST_FORWARD_SECONDS = 5
 
 def add_numbers(request):
     result = None
@@ -32,7 +35,7 @@ def get_task_list_with_next_run(user : User):
             'next_run_time': get_next_run_time(crontab_str = f"{task.crontab.minute} {task.crontab.hour} "
                                                f"{task.crontab.day_of_month} {task.crontab.month_of_year} "
                                                f"{task.crontab.day_of_week}",
-                                               user = user)
+                                               user = user).isoformat()
         }
         for task in tasks
     ]
@@ -69,7 +72,15 @@ def trigger_task(request):
                                           task_lookup_vals['due_date'],
                                           request.user.id), 
                                           queue='nudgie').get()
-    print(f"RESULT: {result}")
+
+    print(f"RESULT OF TASK TRIGGER: {result}")
+
+    #fast forward
+    fast_forward_time = datetime.fromisoformat(task_lookup_vals['next_run_time'])
+    fast_forward_time += timedelta(seconds = TEST_FAST_FORWARD_SECONDS)
+    
+    print(f"FAST FORWARDING TO {fast_forward_time}. {task_lookup_vals['next_run_time']=} {get_time(request.user)=}")
+    set_time(request.user, fast_forward_time)
 
     return HttpResponse('')
 
