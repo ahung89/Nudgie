@@ -66,7 +66,9 @@ def trigger_task(request):
     print("TRIGGERING DA TASK")
     task_lookup_vals = json.loads(request.body.decode('utf-8'))
     result = handle_reminder.apply_async((task_lookup_vals['task_name'],
-                                         task_lookup_vals['due_date']), queue='nudgie').get()
+                                          task_lookup_vals['due_date'],
+                                          request.user.id), 
+                                          queue='nudgie').get()
     print(f"RESULT: {result}")
 
     return HttpResponse('')
