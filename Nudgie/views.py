@@ -67,20 +67,23 @@ def get_task_list_display(request):
 
 def trigger_task(request):
     print("TRIGGERING DA TASK")
-    task_lookup_vals = json.loads(request.body.decode('utf-8'))
-    result = handle_reminder.apply_async((task_lookup_vals['task_name'],
-                                          task_lookup_vals['due_date'],
+    task_data = json.loads(request.body.decode('utf-8'))
+    result = handle_reminder.apply_async((task_data['task_name'],
+                                          task_data['due_date'],
                                           request.user.id), 
                                           queue='nudgie').get()
 
     print(f"RESULT OF TASK TRIGGER: {result}")
 
     #fast forward
-    fast_forward_time = datetime.fromisoformat(task_lookup_vals['next_run_time'])
+    fast_forward_time = datetime.fromisoformat(task_data['next_run_time'])
     fast_forward_time += timedelta(seconds = TEST_FAST_FORWARD_SECONDS)
     
-    print(f"FAST FORWARDING TO {fast_forward_time}. {task_lookup_vals['next_run_time']=} {get_time(request.user)=}")
+    print(f"FAST FORWARDING TO {fast_forward_time}. {task_data['next_run_time']=} {get_time(request.user)=}")
     set_time(request.user, fast_forward_time)
+
+    #update the due date of the PeriodicTask
+    #task = PeriodicTask.objects.get(name=task_data['name'])
 
     return HttpResponse('')
 
