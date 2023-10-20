@@ -68,9 +68,9 @@ document.addEventListener('DOMContentLoaded', function(){
         }
     });
 
-    document.getElementById('task_list').addEventListener('click', function(e) {
+    document.getElementById('tasks').addEventListener('click', function(e) {
         
-        if (e.target && e.target.classList.contains('trigger-btn')) {
+        if (e.target && e.target.classList.contains('task-trigger-btn')) {
             
             const task_name = e.target.getAttribute('data-task-name');
             const due_date = e.target.getAttribute('data-due-date');

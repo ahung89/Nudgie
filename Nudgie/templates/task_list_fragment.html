@@ -14,7 +14,7 @@
             <strong>Task Name:</strong> {{ task.task }} <br>
             <!-- Add a button to trigger the task -->
             <button 
-                class="trigger-btn"
+                class="task-trigger-btn"
                 data-task-name="{{ task.kwargs|get_attr_from_json:'task_name' }}"
                 data-due-date="{{ task.kwargs|get_attr_from_json:'due_date' }}"
                 data-next-run-time="{{ task.next_run_time }}"

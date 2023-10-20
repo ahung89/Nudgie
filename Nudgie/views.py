@@ -11,7 +11,7 @@ from Nudgie.util.reminder_scheduler import get_next_run_time
 from Nudgie.util.time import get_time, set_time
 from .tasks import add, handle_reminder
 from .integrations.chatgpt import handle_convo
-from .models import Conversation, NudgieTask
+from .models import Conversation, MockedTime, NudgieTask
 
 # how many seconds to fast forward by when triggering a reminder for testing
 TEST_FAST_FORWARD_SECONDS = 5
@@ -86,8 +86,8 @@ def trigger_task(request):
 
     result = handle_reminder.apply_async((task_data['task_name'],
                                           task_data['due_date'],
-                                          request.user.id), 
-                                          task_data['periodic_task_id'],
+                                          request.user.id, 
+                                          task_data['periodic_task_id']),
                                           queue='nudgie').get()
 
     print(f"RESULT OF TASK TRIGGER: {result}")
@@ -141,6 +141,7 @@ def reset_user_data(request):
     NudgieTask.objects.filter(user=request.user).delete()
     PeriodicTask.objects.filter(name__startswith=f'{request.user.id}').delete()
     CrontabSchedule.objects.exclude(periodictask__isnull=False).delete()
+    MockedTime.objects.filter(user=request.user).delete()
 
     return HttpResponseRedirect('/chatbot')
 
