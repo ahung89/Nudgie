@@ -40,17 +40,8 @@ def handle_reminder(task_name, due_date, user_id, periodic_task_id):
 
     assert len(filtered_tasks) == 1, f"expected 1 task, got {len(filtered_tasks)}"
 
-    if filtered_tasks[0].completed:
-        print("task already completed, not sending reminder")
-    else:
+    if not filtered_tasks[0].completed:
         print("task incomplete, sending reminder")
-    # print("FILTERED TASKS:")
-    # for task in filtered_tasks:
-    #     print(task)
-
-    # print("ALL TASKS:")
-    # for task in all_tasks:
-    #     print(task)
 
     #calculate the next due-date and save it to the PeriodicTask
     task = PeriodicTask.objects.get(id = periodic_task_id)
@@ -71,5 +62,13 @@ def handle_reminder(task_name, due_date, user_id, periodic_task_id):
     task.kwargs = json.dumps(task_data)
 
     task.save()
+
+    #Create a new NudgieTask object with the new due date
+    NudgieTask.objects.create(
+        user = user,
+        task_name = task_name,
+        goal_name = task_data['goal_name'],
+        due_date = new_due_date
+    )
 
     return task_name
