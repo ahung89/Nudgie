@@ -75,13 +75,14 @@ document.addEventListener('DOMContentLoaded', function(){
             const task_name = e.target.getAttribute('data-task-name');
             const due_date = e.target.getAttribute('data-due-date');
             const next_run_time = e.target.getAttribute('data-next-run-time');
+            const periodic_task_id = e.target.getAttribute('data-periodic-task-id');
             
-            triggerPeriodicTask(task_name, due_date, next_run_time);
+            triggerPeriodicTask(task_name, due_date, next_run_time, periodic_task_id);
         }
     });
 });
 
-function triggerPeriodicTask(task_name, due_date, next_run_time) {
+function triggerPeriodicTask(task_name, due_date, next_run_time, periodic_task_id) {
     // Handle the task trigger based on the task details
     console.log(`Task Name: ${task_name}, Due Date: ${due_date}`);
 
@@ -96,7 +97,8 @@ function triggerPeriodicTask(task_name, due_date, next_run_time) {
         body: JSON.stringify({
             task_name: task_name,
             due_date: due_date,
-            next_run_time: next_run_time
+            next_run_time: next_run_time,
+            periodic_task_id: periodic_task_id
         })
     })
 }

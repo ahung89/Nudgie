@@ -1,5 +1,9 @@
+import json
 from celery import shared_task
+
+from Nudgie.util.reminder_scheduler import calculate_due_date
 from .models import NudgieTask
+from django_celery_beat.models import PeriodicTask
 
 # for app.autodiscover_tasks() to work, you need to define a tasks.py file in each app. 
 # that's why this file is here.
@@ -27,7 +31,7 @@ def notify(message):
     return message
 
 @shared_task
-def handle_reminder(task_name, due_date, user_id):
+def handle_reminder(task_name, due_date, user_id, periodic_task_id):
     print(f"handling reminder for task {task_name} due on {due_date}")
 
     filtered_tasks = NudgieTask.objects.filter(task_name=task_name, due_date=due_date, user_id = user_id)
@@ -46,5 +50,20 @@ def handle_reminder(task_name, due_date, user_id):
     # print("ALL TASKS:")
     # for task in all_tasks:
     #     print(task)
+
+    #calculate the next due-date and save it to the PeriodicTask
+    task = PeriodicTask.objects.get(id = periodic_task_id)
+    crontab_schedule = task.crontab
+    crontab_str = f"{crontab_schedule.minute} {crontab_schedule.hour} {crontab_schedule.day_of_month} {crontab_schedule.month_of_year} {crontab_schedule.day_of_week}"
+
+    new_due_date = calculate_due_date(crontab_str, task.user)
+
+    print(f'NEW DUE DATE: {new_due_date}')
+
+    task_data = json.loads(task.kwargs)
+    task_data['due_date'] = new_due_date.isoformat()
+    task.kwargs = json.dumps(task_data)
+
+    task.save()
 
     return task_name

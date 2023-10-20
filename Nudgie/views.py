@@ -29,6 +29,11 @@ def get_task_list_with_next_run(user : User):
     """helper view for getting list of PeriodicTasks for the test tool"""
     tasks = PeriodicTask.objects.all().order_by('crontab__minute', 'crontab__hour', 'crontab__day_of_week')
 
+    crontab_schedule = tasks[0].crontab
+    crontab_str = f"{crontab_schedule.minute} {crontab_schedule.hour} {crontab_schedule.day_of_month} {crontab_schedule.month_of_year} {crontab_schedule.day_of_week}"
+
+    print(f'EXAMPLE CRONTAB STR: {crontab_str}')
+
     return [
         {
             **model_to_dict(task),
@@ -68,22 +73,24 @@ def get_task_list_display(request):
 def trigger_task(request):
     print("TRIGGERING DA TASK")
     task_data = json.loads(request.body.decode('utf-8'))
-    result = handle_reminder.apply_async((task_data['task_name'],
-                                          task_data['due_date'],
-                                          request.user.id), 
-                                          queue='nudgie').get()
-
-    print(f"RESULT OF TASK TRIGGER: {result}")
 
     #fast forward
+    #TODO: this is a weird place to put this. the fast-forward stuff should really be
+    #in the handle_reminder method, right before the due dates are updated. It's quite
+    #possible that the completion check may eventually use the current time, and if that
+    #is the case then this will break it.
     fast_forward_time = datetime.fromisoformat(task_data['next_run_time'])
     fast_forward_time += timedelta(seconds = TEST_FAST_FORWARD_SECONDS)
-    
     print(f"FAST FORWARDING TO {fast_forward_time}. {task_data['next_run_time']=} {get_time(request.user)=}")
     set_time(request.user, fast_forward_time)
 
-    #update the due date of the PeriodicTask
-    #task = PeriodicTask.objects.get(name=task_data['name'])
+    result = handle_reminder.apply_async((task_data['task_name'],
+                                          task_data['due_date'],
+                                          request.user.id), 
+                                          task_data['periodic_task_id'],
+                                          queue='nudgie').get()
+
+    print(f"RESULT OF TASK TRIGGER: {result}")
 
     return HttpResponse('')
 

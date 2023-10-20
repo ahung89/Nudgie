@@ -17,7 +17,8 @@
                 class="trigger-btn"
                 data-task-name="{{ task.kwargs|get_attr_from_json:'task_name' }}"
                 data-due-date="{{ task.kwargs|get_attr_from_json:'due_date' }}"
-                data-next-run-time="{{ task.next_run_time }}">
+                data-next-run-time="{{ task.next_run_time }}"
+                data-periodic-task-id="{{ task.id }}">
                     Trigger Task
             </button>
         </li>
