@@ -104,4 +104,18 @@ function triggerPeriodicTask(task_name, due_date, next_run_time, periodic_task_i
             periodic_task_id: periodic_task_id
         })
     })
+    .then(() => {
+        fetch('/get_conversation_display/')
+            .then(response => response.text())
+            .then(html=> {
+                document.getElementById('conversation').innerHTML = html;
+            })
+    })
+    .then(() => {
+        fetch('/get_task_list/')
+            .then(response => response.text())
+            .then(html=> {
+                document.getElementById('tasks').innerHTML = html;
+            })
+    });
 }

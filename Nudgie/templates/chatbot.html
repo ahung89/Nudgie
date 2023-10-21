@@ -19,9 +19,7 @@
             <a href="{% url 'reset_user_data' %}">Clear User Data</a>
             <br><br>
             <div id="conversation">
-                {% for entry in conversation %}
-                    <strong>{{ entry.role }}:</strong> {{ entry.content }}<br>
-                {% endfor %}
+                {% include 'conversation_fragment.html' %}
             </div>
         </div>
         <div class="right-content">

@@ -58,6 +58,10 @@ def chatbot_view(request):
         'tasks': tasks
     })
 
+def get_conversation_display(request):
+    return render(request, 'conversation_fragment.html',
+                   {'conversation': load_conversation(request.user)})
+
 def get_task_list_display(request):
     return render(request, 'task_list_fragment.html',
                    {'tasks': get_task_list_with_next_run(request.user),
