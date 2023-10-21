@@ -1,7 +1,9 @@
 import json
 from celery import shared_task
+import requests
 
 from Nudgie.util.reminder_scheduler import calculate_due_date
+from Nudgie.integrations.chatgpt import trigger_reminder
 from .models import NudgieTask
 from django_celery_beat.models import PeriodicTask
 from django.contrib.auth.models import User
@@ -36,15 +38,21 @@ def handle_reminder(task_name, due_date, user_id, periodic_task_id):
     print(f"handling reminder for task {task_name} due on {due_date}")
 
     filtered_tasks = NudgieTask.objects.filter(task_name=task_name, due_date=due_date, user_id = user_id)
+    user = User.objects.get(id = user_id)
     # all_tasks = NudgieTask.objects.filter(user = user)
 
     assert len(filtered_tasks) == 1, f"expected 1 task, got {len(filtered_tasks)}"
+    
+    print(f"periodic_task_id: {periodic_task_id}")
+    #retrieve task data to use for triggering reminder (and for updating the due date)
+    task = PeriodicTask.objects.get(id = periodic_task_id)
+    task_data = json.loads(task.kwargs)
 
     if not filtered_tasks[0].completed:
         print("task incomplete, sending reminder")
+        trigger_reminder(user, task_data)
 
     #calculate the next due-date and save it to the PeriodicTask
-    task = PeriodicTask.objects.get(id = periodic_task_id)
     crontab_schedule = task.crontab
     crontab_dict = {
         'minute': crontab_schedule.minute,
@@ -52,12 +60,8 @@ def handle_reminder(task_name, due_date, user_id, periodic_task_id):
         'day_of_week': crontab_schedule.day_of_week
     }
     
-    user = User.objects.get(id = user_id)
     new_due_date = calculate_due_date(crontab_dict, user)
-
     print(f'NEW DUE DATE: {new_due_date}')
-
-    task_data = json.loads(task.kwargs)
     task_data['due_date'] = new_due_date.isoformat()
     task.kwargs = json.dumps(task_data)
 

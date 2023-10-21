@@ -1,4 +1,4 @@
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 import json
 from django.forms import model_to_dict
 import pytz
@@ -12,6 +12,7 @@ from Nudgie.util.time import get_time, set_time
 from .tasks import add, handle_reminder
 from .integrations.chatgpt import handle_convo
 from .models import Conversation, MockedTime, NudgieTask
+from Nudgie.util.dialogue import load_conversation
 
 # how many seconds to fast forward by when triggering a reminder for testing
 TEST_FAST_FORWARD_SECONDS = 5
@@ -46,24 +47,16 @@ def get_task_list_with_next_run(user : User):
     ]
 
 def chatbot_view(request):
-    load_conversation(request)
+    convo = load_conversation(request.user)
 
     #for testing tool
     tasks = get_task_list_with_next_run(request.user)
 
     return render(request, 'chatbot.html', {
-        'conversation': request.session['conversation'],
+        'conversation': convo,
         'server_time': get_time(request.user).strftime('%Y-%m-%d %H:%M:%S'),
         'tasks': tasks
     })
-
-def load_conversation(request):
-    #check if the convo is in the request session
-    if 'conversation' not in request.session:
-        lines = Conversation.objects.filter(user=request.user).order_by('timestamp') 
-        convo = [{"role": line.message_type,
-                        "content": line.content} for line in lines]
-        request.session['conversation'] = convo
 
 def get_task_list_display(request):
     return render(request, 'task_list_fragment.html',
@@ -112,8 +105,7 @@ def chatbot_api(request):
         print(formatted_datetime)
 
         print(f"RECEIVED INPUT. User input: {user_input}")
-        load_conversation(request)
-        convo = request.session['conversation']
+        convo = load_conversation(request.user)
 
         #determine which flow to use
         has_nudgie_tasks = NudgieTask.objects.filter(user=request.user).exists()
@@ -128,7 +120,6 @@ def chatbot_api(request):
 
         user_convo_entry.save()
         ai_convo_entry.save()
-        request.session['conversation'] = convo
 
         return JsonResponse({
             'sender': 'assistant',
@@ -136,7 +127,6 @@ def chatbot_api(request):
         })
 
 def reset_user_data(request):
-    request.session['conversation'] = []
     Conversation.objects.filter(user=request.user).delete()
     NudgieTask.objects.filter(user=request.user).delete()
     PeriodicTask.objects.filter(name__startswith=f'{request.user.id}').delete()

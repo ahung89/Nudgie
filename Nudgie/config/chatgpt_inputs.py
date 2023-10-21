@@ -211,3 +211,11 @@ INITIAL_CONVO_FUNCTIONS = [
         }
     }
 ]
+
+REMINDER_PROMPT = """[REMINDER] Your reply to this message is to be a reminder for the user to perform the task.
+Here are the task parameters you will need to generate the reminder: task_name: '{task_name}', goal_name: '{goal_name}',
+reminder_notes: '{reminder_notes}', due_date: '{due_date}'.
+You are to use this information, as long as the conversational history, to generate a reminder for the user which you
+think will be optimally motivating and effective. You can use the conversational history to get a sense of the user's
+personality. After the reminder, write a short explanation of why you crafted the reminder the way you did.
+"""

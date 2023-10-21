@@ -50,7 +50,10 @@ document.getElementById('test-button').addEventListener('click', function(event)
     let textField = document.getElementById('user_input');
     textField.value = '';
 
-    handleSubmit('NOCONF hi. i want to learn to cook. i want to practice MWF at 5 PM every week.');
+    s = 
+    handleSubmit("NOCONF hi. i want to learn to cook. i want to practice MWF at 5 PM every week. I tend to be very tired "
+                + "on Mondays because of work. On Wednesday I'll need a bit of a boost because the kids tend to "
+                + "keep me busy you know?" );
 });
 
 document.addEventListener('DOMContentLoaded', function(){
