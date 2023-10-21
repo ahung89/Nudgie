@@ -28,7 +28,7 @@
             "type": "python",
             "request": "launch",
             "module": "celery",
-            "args": ["-A", "Nudgie", "worker", "-l", "INFO", "--pool=eventlet",
+            "args": ["-A", "Nudgie", "worker", "-l", "INFO", "--pool=gevent",
                  "-Q", "nudgie"]
         },
         {
