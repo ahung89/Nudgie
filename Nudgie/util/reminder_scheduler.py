@@ -51,7 +51,7 @@ def schedule_tasks_from_crontab_list(crontab_list, user):
             crontab=cron_schedule,
             name=str(user.id) + '_Notification at ' + str(notif_cron['hour']) + ':' + str(notif_cron['minute'])
               + ' on ' + str(notif_cron['day_of_week']),
-            task='Nudgie.tasks.notify',
+            task='Nudgie.tasks.handle_reminder',
             args=json.dumps(['Task scheduled for ' + str(notif_cron['hour']) + ':'
                               + str(notif_cron['minute']) + ' on ' + str(notif_cron['day_of_week'])
                               + ' completed']),

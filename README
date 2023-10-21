@@ -1,6 +1,8 @@
 MOSTLY DEPRECATED -- Steps 1-3 are now automated via launch.json. But keeping
 this here just for informational purposes.
 
+IMPORTANT: for debugging in vs code, make sure the env variable GEVENT_SUPPORT is set to True.
+
 To run, execute the following command in the nudgie directory
 
 1) Start Django server

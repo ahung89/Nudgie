@@ -4,9 +4,14 @@ import requests
 
 from Nudgie.util.reminder_scheduler import calculate_due_date
 from Nudgie.integrations.chatgpt import trigger_nudge, trigger_reminder
+from Nudgie.util.time import get_time
 from .models import Conversation, NudgieTask
 from django_celery_beat.models import PeriodicTask
 from django.contrib.auth.models import User
+from datetime import timedelta
+
+MAX_NUDGES_PER_REMINDER = 2
+MIN_MINUTES_BETWEEN_NUDGES = 60 #minutes
 
 # for app.autodiscover_tasks() to work, you need to define a tasks.py file in each app. 
 # that's why this file is here.
@@ -45,12 +50,39 @@ def handle_nudge(task_name, due_date, user_id, reminder_message):
     ##only trigger the nudge if the task hasn't already been completed.
     if not filtered_tasks[0].completed:
         print("task incomplete, sending nudge")
-        #reminder message comes from the PeriodicTask kwargs
+        #reminder message comes from the PeriodicTask kwargs. it's associated with the nudge.
         trigger_nudge(user, reminder_message)
+
+def generate_nudges(due_time, user):
+    current_time = get_time(user)
+    total_interval = (due_time - generate_nudges).total_minutes()
     
-    return None
+    num_nudges_that_fit = int(total_interval // MIN_MINUTES_BETWEEN_NUDGES)
+    actual_num_nudges = min(MAX_NUDGES_PER_REMINDER, num_nudges_that_fit)
+
+    if actual_num_nudges == 0:
+        print("Not enough time to schedule any nudges.")
+        return
+
+    actual_interval = total_interval / actual_num_nudges
+
+    for i in range(actual_num_nudges):
+        next_nudge_time = current_time + timedelta(minutes=(i + 1) * actual_interval)
+        print(f"Scheduling nudge {i+1} at {next_nudge_time}")
+        # schedule the nudge
+        # PeriodicTask.objects.create(
+        #     crontab=cron_schedule,
+        #     name=str(user.id) + '_Nudge at ' + str(next_nudge_time.hour) + ':' + str(next_nudge_time.minute),
+        #     task='Nudgie.tasks.handle_nudge',
+        #     kwargs=json.dumps({**notif['reminder_data'], 'nudge_type' : 'nudge'}),
+        #     one_off=True,
+        #     queue='nudgie'
+        # )
+    pass
 
 #TODO: refactor this
+#TODO: Just pass in ID for periodic task and pull the rest of the info instead
+#of passing in all the info individually
 @shared_task
 def handle_reminder(task_name, due_date, user_id, periodic_task_id):
     print(f"handling reminder for task {task_name} due on {due_date}")

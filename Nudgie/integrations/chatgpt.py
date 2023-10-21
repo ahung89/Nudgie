@@ -61,7 +61,7 @@ def trigger_nudge(user, reminder_message):
     reminder_text.save()
 
     print(f'MESSAGES: {messages}')
-    print('RESPONSE TEXT FOR GENERATED REMINDER: ', response_text)
+    print('RESPONSE TEXT FOR GENERATED NUDGE: ', response_text)
 
     return None
 
