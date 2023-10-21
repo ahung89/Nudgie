@@ -12,6 +12,7 @@ class Conversation(models.Model):
     message_type = models.CharField(max_length=20, choices=[('user', 'User'), ('assistant', 'Assistant')])
     content = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True) #is this even being used?
+    dialogue_type = models.TextField(default='standard')
 
     def __str__(self):
         return f"Conversation with {self.user.username} - {self.timestamp}"

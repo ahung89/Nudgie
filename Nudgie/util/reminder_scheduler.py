@@ -55,6 +55,6 @@ def schedule_tasks_from_crontab_list(crontab_list, user):
             args=json.dumps(['Task scheduled for ' + str(notif_cron['hour']) + ':'
                               + str(notif_cron['minute']) + ' on ' + str(notif_cron['day_of_week'])
                               + ' completed']),
-            kwargs=json.dumps(notif['reminder_data']),
+            kwargs=json.dumps({**notif['reminder_data'], 'nudge_type' : 'reminder'}),
             queue='nudgie'
         )

@@ -3,8 +3,8 @@ from celery import shared_task
 import requests
 
 from Nudgie.util.reminder_scheduler import calculate_due_date
-from Nudgie.integrations.chatgpt import trigger_reminder
-from .models import NudgieTask
+from Nudgie.integrations.chatgpt import trigger_nudge, trigger_reminder
+from .models import Conversation, NudgieTask
 from django_celery_beat.models import PeriodicTask
 from django.contrib.auth.models import User
 
@@ -33,6 +33,24 @@ def notify(message):
     print(f"ATTENTION! {message}")
     return message
 
+@shared_task
+def handle_nudge(task_name, due_date, user_id, reminder_message):
+    print(f"handling nudge for task {task_name} due on {due_date}")
+
+    filtered_tasks = NudgieTask.objects.filter(task_name=task_name, due_date=due_date, user_id = user_id)
+    user = User.objects.get(id = user_id)
+
+    assert len(filtered_tasks) == 1, f"expected 1 task, got {len(filtered_tasks)}"
+
+    ##only trigger the nudge if the task hasn't already been completed.
+    if not filtered_tasks[0].completed:
+        print("task incomplete, sending nudge")
+        #reminder message comes from the PeriodicTask kwargs
+        trigger_nudge(user, reminder_message)
+    
+    return None
+
+#TODO: refactor this
 @shared_task
 def handle_reminder(task_name, due_date, user_id, periodic_task_id):
     print(f"handling reminder for task {task_name} due on {due_date}")

@@ -56,6 +56,10 @@ is always to help him achieve his goals. But through chatting with him you can b
 his personality, which will help you craft more effective reminders.
 
 You will be prompted to send reminders via special messages which will be prefixed with [REMINDER].
+You will also be prompted to send nudges via special messages which will be prefixed with [NUDGE]. A
+nudge is a gentle reminder to the user to do the thing that he was last reminded to do. It will of
+course be phrased differently each time and will only be sent if the user has not yet completed the
+task.
 
 The user will also send you messages to indicate that he has completed a task. In order to mark a task
 as completed, you will need to know the following information:
@@ -218,4 +222,11 @@ reminder_notes: '{reminder_notes}', due_date: '{due_date}'.
 You are to use this information, as long as the conversational history, to generate a reminder for the user which you
 think will be optimally motivating and effective. You can use the conversational history to get a sense of the user's
 personality. After the reminder, write a short explanation of why you crafted the reminder the way you did.
+"""
+
+NUDGE_PROMPT = """[NUDGE] Your reply to this message is to be a nudge for the user to perform the task that he was
+last reminded to do. Here is the reminder message that you sent him: '{reminder_message}'. Basically just gently 'nudge'
+him reminding him to do the thing, perhaps asking if he's done it yet. Try to vary it up and keep the tone casual but
+encouraging. After the nudge, write a short explanation of why you crafted the nudge the way you did, and clearly delineate
+the explanation.
 """
