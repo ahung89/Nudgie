@@ -1,3 +1,4 @@
+from ast import parse
 from datetime import datetime, timedelta
 import json
 from django.forms import model_to_dict
@@ -28,12 +29,14 @@ def add_numbers(request):
 
 def get_task_list_with_next_run(user : User):
     """helper view for getting list of PeriodicTasks for the test tool"""
-    tasks = PeriodicTask.objects.all().order_by('crontab__minute', 'crontab__hour', 'crontab__day_of_week')
+    tasks = PeriodicTask.objects.exclude(task='celery.backend_cleanup')
 
-    crontab_schedule = tasks[0].crontab
-    crontab_str = f"{crontab_schedule.minute} {crontab_schedule.hour} {crontab_schedule.day_of_month} {crontab_schedule.month_of_year} {crontab_schedule.day_of_week}"
-
-    print(f'EXAMPLE CRONTAB STR: {crontab_str}')
+    tasks = sorted(tasks, key=lambda task: get_next_run_time(
+                        f"{task.crontab.minute} {task.crontab.hour} " \
+                        f"{task.crontab.day_of_month} {task.crontab.month_of_year} " \
+                        f"{task.crontab.day_of_week}",
+                        user
+                    ))
 
     return [
         {
