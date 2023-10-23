@@ -81,7 +81,8 @@ def generate_nudges(due_time, user, task):
         # schedule the nudge
         PeriodicTask.objects.create(
             crontab=task.crontab,
-            name=str(user.id) + '_Nudge at ' + str(next_nudge_time.hour) + ':' + str(next_nudge_time.minute),
+            name=(str(user.id) + '_Nudge at ' + str(next_nudge_time.hour) + ':' 
+                + str(next_nudge_time.minute) + ' on ' + str(next_nudge_time.day)),
             task='Nudgie.tasks.handle_nudge',
             kwargs=json.dumps({**json.loads(task.kwargs), 'dialogue_type' : 'nudge'}),
             one_off=True,
