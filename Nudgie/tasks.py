@@ -56,6 +56,7 @@ def handle_nudge(task_name, due_date, user_id):
         print("task incomplete, sending nudge")
         #reminder message comes from the PeriodicTask kwargs. it's associated with the nudge.
         trigger_nudge(user)
+        #TODO: deactivate nudge
 
 def generate_nudges(due_time, user, task):
     current_time = get_time(user)

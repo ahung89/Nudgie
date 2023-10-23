@@ -76,6 +76,8 @@ def get_task_list_display(request):
 def trigger_task(request):
     print("TRIGGERING DA TASK")
     task_data = json.loads(request.body.decode('utf-8'))
+    task = PeriodicTask.objects.get(id = task_data['periodic_task_id'])
+    kwargs = json.loads(task.kwargs)
 
     #fast forward
     #TODO: this is a weird place to put this. the fast-forward stuff should really be
@@ -87,7 +89,7 @@ def trigger_task(request):
     print(f"FAST FORWARDING TO {fast_forward_time}. {task_data['next_run_time']=} {get_time(request.user)=}")
     set_time(request.user, fast_forward_time)
 
-    if task_data['dialogue_type'] == 'reminder':
+    if kwargs['dialogue_type'] == 'reminder':
         result = handle_reminder.apply_async((task_data['task_name'],
                                               task_data['due_date'],
                                               request.user.id, 
