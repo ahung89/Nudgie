@@ -53,9 +53,9 @@ def handle_nudge(task_name, due_date, user_id, reminder_message):
         #reminder message comes from the PeriodicTask kwargs. it's associated with the nudge.
         trigger_nudge(user, reminder_message)
 
-def generate_nudges(due_time, user):
+def generate_nudges(due_time, user, task):
     current_time = get_time(user)
-    total_interval = (due_time - generate_nudges).total_minutes()
+    total_interval = (due_time - current_time).total_seconds() / 60
     
     num_nudges_that_fit = int(total_interval // MIN_MINUTES_BETWEEN_NUDGES)
     actual_num_nudges = min(MAX_NUDGES_PER_REMINDER, num_nudges_that_fit)
@@ -69,16 +69,19 @@ def generate_nudges(due_time, user):
     for i in range(actual_num_nudges):
         next_nudge_time = current_time + timedelta(minutes=(i + 1) * actual_interval)
         print(f"Scheduling nudge {i+1} at {next_nudge_time}")
+        task_data = json.loads(task.kwargs)
+        task_data['next_run_time'] = next_nudge_time.isoformat()
+        task.kwargs = json.dumps(task_data)
+
         # schedule the nudge
-        # PeriodicTask.objects.create(
-        #     crontab=cron_schedule,
-        #     name=str(user.id) + '_Nudge at ' + str(next_nudge_time.hour) + ':' + str(next_nudge_time.minute),
-        #     task='Nudgie.tasks.handle_nudge',
-        #     kwargs=json.dumps({**notif['reminder_data'], 'nudge_type' : 'nudge'}),
-        #     one_off=True,
-        #     queue='nudgie'
-        # )
-    pass
+        PeriodicTask.objects.create(
+            crontab=task.crontab,
+            name=str(user.id) + '_Nudge at ' + str(next_nudge_time.hour) + ':' + str(next_nudge_time.minute),
+            task='Nudgie.tasks.handle_nudge',
+            kwargs=json.dumps({**json.loads(task.kwargs), 'dialogue_type' : 'nudge'}),
+            one_off=True,
+            queue='nudgie'
+        )
 
 #TODO: refactor this
 #TODO: Just pass in ID for periodic task and pull the rest of the info instead
@@ -124,5 +127,7 @@ def handle_reminder(task_name, due_date, user_id, periodic_task_id):
         goal_name = task_data['goal_name'],
         due_date = new_due_date
     )
+    #Generate nudges.
+    generate_nudges(new_due_date, user, task)
 
     return task_name

@@ -36,7 +36,9 @@ def get_task_list_with_next_run(user : User):
                         f"{task.crontab.day_of_month} {task.crontab.month_of_year} " \
                         f"{task.crontab.day_of_week}",
                         user
-                    ))
+                    )
+                    if json.loads(task.kwargs)['dialogue_type'] != 'nudge' 
+                    else datetime.fromisoformat(json.loads(task.kwargs)['next_run_time']))
 
     return [
         {
@@ -45,6 +47,7 @@ def get_task_list_with_next_run(user : User):
                                                f"{task.crontab.day_of_month} {task.crontab.month_of_year} "
                                                f"{task.crontab.day_of_week}",
                                                user = user).isoformat()
+                            if json.loads(task.kwargs)['dialogue_type'] != 'nudge' else json.loads(task.kwargs)['next_run_time'],
         }
         for task in tasks
     ]
