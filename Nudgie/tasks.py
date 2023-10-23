@@ -1,6 +1,5 @@
 import json
 from celery import shared_task
-import requests
 
 from Nudgie.util.reminder_scheduler import calculate_due_date
 from Nudgie.integrations.chatgpt import trigger_nudge, trigger_reminder
@@ -39,7 +38,11 @@ def notify(message):
     return message
 
 @shared_task
-def handle_nudge(task_name, due_date, user_id, reminder_message):
+def handle_nudge(task_name, due_date, user_id):
+    '''
+    A nudge must know the due date, task name, and related notes/info. It must not
+    fire off if the task has already been completed, or if the due date was missed.
+    '''
     print(f"handling nudge for task {task_name} due on {due_date}")
 
     filtered_tasks = NudgieTask.objects.filter(task_name=task_name, due_date=due_date, user_id = user_id)
@@ -48,10 +51,11 @@ def handle_nudge(task_name, due_date, user_id, reminder_message):
     assert len(filtered_tasks) == 1, f"expected 1 task, got {len(filtered_tasks)}"
 
     ##only trigger the nudge if the task hasn't already been completed.
+    #TODO: also check if the due date has passed.
     if not filtered_tasks[0].completed:
         print("task incomplete, sending nudge")
         #reminder message comes from the PeriodicTask kwargs. it's associated with the nudge.
-        trigger_nudge(user, reminder_message)
+        trigger_nudge(user)
 
 def generate_nudges(due_time, user, task):
     current_time = get_time(user)

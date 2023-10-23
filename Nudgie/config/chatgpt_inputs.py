@@ -225,8 +225,7 @@ personality. After the reminder, write a short explanation of why you crafted th
 """
 
 NUDGE_PROMPT = """[NUDGE] Your reply to this message is to be a nudge for the user to perform the task that he was
-last reminded to do. Here is the reminder message that you sent him: '{reminder_message}'. Basically just gently 'nudge'
-him reminding him to do the thing, perhaps asking if he's done it yet. Try to vary it up and keep the tone casual but
-encouraging. After the nudge, write a short explanation of why you crafted the nudge the way you did, and clearly delineate
-the explanation.
+last reminded to do. Basically just gently 'nudge' him reminding him to do the thing, perhaps asking if he's done it yet.
+Try to vary it up and keep the tone casual but encouraging. After the nudge, write a short explanation of why you crafted
+the nudge the way you did, and clearly delineate the explanation.
 """

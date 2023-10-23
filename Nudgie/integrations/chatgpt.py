@@ -38,10 +38,8 @@ def trigger_reminder(user, task_data):
     print(f'MESSAGES: {messages}')
     print('RESPONSE TEXT FOR GENERATED REMINDER: ', response_text)
 
-def trigger_nudge(user, reminder_message):
-    message_content = NUDGE_PROMPT.format(reminder_message=reminder_message)
-    print(f"NUDGE-TRIGGERING MESSAGE: {message_content}")
-    messages = load_conversation(user) + [{'role': 'user', 'content': message_content}]
+def trigger_nudge(user):
+    messages = load_conversation(user) + [{'role': 'user', 'content': NUDGE_PROMPT}]
     api_messages = [get_system_message_standard(), *messages]
     print(f'API MESSAGES: {api_messages}')
 
@@ -54,7 +52,7 @@ def trigger_nudge(user, reminder_message):
     response_text = response.choices[0].message.content
     messages.append({'role': 'assistant', 'content': response_text})
     
-    system_prompt = Conversation(user=user, message_type='user', content=message_content)
+    system_prompt = Conversation(user=user, message_type='user', content=NUDGE_PROMPT)
     system_prompt.save() #just for debugging
 
     reminder_text = Conversation(user=user, message_type='assistant', content=response_text)
