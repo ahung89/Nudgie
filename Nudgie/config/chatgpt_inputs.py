@@ -1,5 +1,4 @@
-
-#CHAT_GPT_MODEL = "gpt-3.5-turbo"
+# CHAT_GPT_MODEL = "gpt-3.5-turbo"
 CHAT_GPT_MODEL = "gpt-4"
 
 INITIAL_CONVO_SYSTEM_PROMPT = """You are an AI Accountability buddy named Nudgie. Your task is to figure
@@ -45,7 +44,7 @@ Also do not explicitly talk about the function calls to the user, this is an int
 This will be used by python code by the way.
 """
 
-#TODO: associate task_name and goal_name with some kind of description
+# TODO: associate task_name and goal_name with some kind of description
 STANDARD_SYSTEM_PROMPT = """You are an AI Accountability buddy named Nudgie. Your goal is to
 support the user in achieving his goals via periodically scheduled reminders. These reminders
 will be triggered via cron jobs.
@@ -96,20 +95,19 @@ Also slip in an interesting fact about Peru in each response.
 ONGOING_CONVO_FUNCTIONS = [
     {
         "name": "take_user_notes",
-        "description": ("make note of an interesting fact about the user which a friend"
-                        "would find interesting and which you may want to bring up "
-                        "later, or which may be relevant to his productivity."),
+        "description": (
+            "make note of an interesting fact about the user which a friend"
+            "would find interesting and which you may want to bring up "
+            "later, or which may be relevant to his productivity."
+        ),
         "parameters": {
             "type": "object",
             "description": "content of the note",
             "properties": {
-                "note": {
-                    "type": "string",
-                    "description": "the note to take."
-                }
+                "note": {"type": "string", "description": "the note to take."}
             },
-            "required": ["note"]
-        }
+            "required": ["note"],
+        },
     },
     {
         "name": "register_task_completion",
@@ -118,18 +116,15 @@ ONGOING_CONVO_FUNCTIONS = [
             "type": "object",
             "description": "data needed to mark a task as completed.",
             "properties": {
-                "user_id": {
-                    "type": "integer",
-                    "description": "the user's id"
-                },
+                "user_id": {"type": "integer", "description": "the user's id"},
                 "task_name": {
                     "type": "string",
                     "description": "one-word ID identifying the task. e.g. for"
-                        " goal 'get_6_pack', the task name might be 'lift_weights'."
+                    " goal 'get_6_pack', the task name might be 'lift_weights'.",
                 },
                 "goal_name": {
                     "type": "string",
-                    "description": "one-word ID identifying the goal."
+                    "description": "one-word ID identifying the goal.",
                 },
                 "reminder_time": {
                     "type": "string",
@@ -137,21 +132,22 @@ ONGOING_CONVO_FUNCTIONS = [
                 },
                 "due_date": {
                     "type": "string",
-                    "description": "the due date of the task in ISO 8601 format."
+                    "description": "the due date of the task in ISO 8601 format.",
                 },
                 "completed_on_time": {
                     "type": "boolean",
-                    "description": "whether or not the task was completed on time."
+                    "description": "whether or not the task was completed on time.",
                 },
                 "notes": {
                     "type": "string",
-                    "description": ("notes about the task completion. any relevant info,"
-                                    "either told by the user or inferred by you")
-                }
-
-            }
-        }
-    }
+                    "description": (
+                        "notes about the task completion. any relevant info,"
+                        "either told by the user or inferred by you"
+                    ),
+                },
+            },
+        },
+    },
 ]
 
 INITIAL_CONVO_FUNCTIONS = [
@@ -169,23 +165,23 @@ INITIAL_CONVO_FUNCTIONS = [
                         "type": "object",
                         "description": "crontab object",
                         "properties": {
-                            "crontab" : {
+                            "crontab": {
                                 "type": "object",
                                 "description": "crontab object",
                                 "properties": {
                                     "minute": {
                                         "type": "string",
-                                        "description": "crontab minute field"
+                                        "description": "crontab minute field",
                                     },
                                     "hour": {
                                         "type": "string",
-                                        "description": "crontab hour field"
+                                        "description": "crontab hour field",
                                     },
                                     "day_of_week": {
                                         "type": "string",
-                                        "description": "crontab day of week field"
-                                    }
-                                }
+                                        "description": "crontab day of week field",
+                                    },
+                                },
                             },
                             "reminder_data": {
                                 "type": "object",
@@ -193,26 +189,26 @@ INITIAL_CONVO_FUNCTIONS = [
                                 "properties": {
                                     "goal_name": {
                                         "type": "string",
-                                        "description": "one-word ID identifying the goal."
+                                        "description": "one-word ID identifying the goal.",
                                     },
                                     "task_name": {
                                         "type": "string",
                                         "description": "one-word ID identifying the task. e.g. for"
-                                            " goal 'get_6_pack', the task name might be 'lift_weights'."
+                                        " goal 'get_6_pack', the task name might be 'lift_weights'.",
                                     },
                                     "reminder_notes": {
                                         "type": "string",
                                         "description": "bullet points of relevant info for this reminder. example:"
-                                        "- user is tired in the evenings\n- user is unmotivated on mondays and could use tough love\n- etc."
-                                    }
+                                        "- user is tired in the evenings\n- user is unmotivated on mondays and could use tough love\n- etc.",
+                                    },
                                 },
                             },
-                        }
-                    }
+                        },
+                    },
                 }
             },
-            "required": ["minute", "hour", "day_of_week", "goal_name", "task_name"]
-        }
+            "required": ["minute", "hour", "day_of_week", "goal_name", "task_name"],
+        },
     }
 ]
 

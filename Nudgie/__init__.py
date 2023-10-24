@@ -5,4 +5,4 @@ from .celery import app as celery_app
 # defined, then the wildcard will import all names that do not begin with an underscore.
 # In this case __all__ is defined as celery_app, so if someone writes from Nudgie import *, then only
 # celery_app will be imported. It's good practice to define __all__ to prevent unintended imports.
-__all__ = ('celery_app',)
+__all__ = ("celery_app",)
