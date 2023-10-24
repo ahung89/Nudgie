@@ -8,10 +8,9 @@ class TaskData(NamedTuple):
     crontab: CrontabSchedule
     task_name: str
     goal_name: str
-    user_id: int
+    user_id: int  # store user instead of the ID?
     due_date: str
     dialogue_type: str
-    id: Optional[int] = None  # only exists if the task has already been scheduled
     reminder_notes: Optional[str] = None
     next_run_time: Optional[str] = None  # only for testing tool, get rid of later
 
@@ -21,6 +20,7 @@ class TaskData(NamedTuple):
                 "task_name": self.task_name,
                 "goal_name": self.goal_name,
                 "due_date": self.due_date,
+                "user_id": self.user_id,
                 "dialogue_type": self.dialogue_type,
                 "reminder_notes": self.reminder_notes,
                 "next_run_time": self.next_run_time,
@@ -65,7 +65,6 @@ def get_periodic_task_data(id):
     kwargs = json.loads(task.kwargs)
 
     return TaskData(
-        id=id,
         crontab=task.crontab,
         task_name=kwargs["task_name"],
         goal_name=kwargs["goal_name"],

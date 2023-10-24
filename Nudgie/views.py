@@ -103,9 +103,8 @@ def trigger_task(request: HttpRequest) -> HttpResponse:
     """
     This is the API for triggering a task. It is for testing purposes only.
     """
-    task_data = get_periodic_task_data(
-        json.loads(request.body.decode("utf-8"))["periodic_task_id"]
-    )
+    task_id = json.loads(request.body.decode("utf-8"))["periodic_task_id"]
+    task_data = get_periodic_task_data(task_id)
 
     crontab = task_data.crontab
     fast_forward(
@@ -121,10 +120,9 @@ def trigger_task(request: HttpRequest) -> HttpResponse:
     )
 
     if task_data.dialogue_type == DIALOGUE_TYPE_REMINDER:
-        print("I AM ONLY PASSING THIS IN: " + task_data.id)
         result = handle_reminder.apply_async(
             args=(
-                task_data.id,
+                task_id,
             ),  # you MUST have the comma after the id or else it won't be treated as a tuple
             queue=QUEUE_NAME,
         ).get()

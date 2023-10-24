@@ -111,7 +111,7 @@ def handle_reminder(periodic_task_id):
     )
 
     print(f"NEW DUE DATE: {new_due_date}")
-    modify_periodic_task(task_data.id, due_date=new_due_date.isoformat())
+    modify_periodic_task(periodic_task_id, due_date=new_due_date.isoformat())
 
     # Create a new NudgieTask object with the new due date
     NudgieTask.objects.create(
