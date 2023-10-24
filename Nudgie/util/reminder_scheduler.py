@@ -37,7 +37,7 @@ def calculate_due_date(
     month_of_year: int,
     day_of_week: int,
     user: User,
-):
+) -> datetime:
     """Given a crontab object (key-val pairs), calculate the next due date for the task.
     By default, the due date is the end of the day of the next time the crontab
     will run. For example, if the crontab is set to run at 9:00 AM on Monday,
