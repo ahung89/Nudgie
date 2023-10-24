@@ -21,16 +21,6 @@ from Nudgie.util.periodic_task_helper import get_periodic_task_data
 TEST_FAST_FORWARD_SECONDS = 5
 
 
-def add_numbers(request):
-    result = None
-    if request.method == "POST":
-        num1 = int(request.POST.get("num1"))
-        num2 = int(request.POST.get("num2"))
-        result = add.delay(num1, num2).get()
-
-    return render(request, "add.html", {"result": result})
-
-
 def get_task_list_with_next_run(user: User):
     """helper view for getting list of PeriodicTasks for the test tool"""
     tasks = PeriodicTask.objects.exclude(task="celery.backend_cleanup")

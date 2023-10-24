@@ -1,7 +1,7 @@
 import json
 from celery import shared_task
 
-from Nudgie.util.reminder_scheduler import calculate_due_date
+from Nudgie.util.reminder_scheduler import calculate_due_date, schedule_nudge
 from Nudgie.integrations.chatgpt import trigger_nudge, trigger_reminder
 from Nudgie.util.time import get_time
 from .models import NudgieTask
@@ -10,7 +10,6 @@ from .util.periodic_task_helper import (
     modify_periodic_task,
     TaskData,
 )
-from django_celery_beat.models import PeriodicTask
 from django.contrib.auth.models import User
 from datetime import timedelta, datetime
 
@@ -37,27 +36,6 @@ def look_up_nudgie_task(task_name, user_id):
 # this is so that it can be used in other apps. The thing is, reusable apps cannot depend
 # on the project itself. So you can't import the celery app from the project.
 @shared_task
-def add(x, y):
-    return x + y
-
-
-@shared_task
-def mul(x, y):
-    return x * y
-
-
-@shared_task
-def xsum(numbers):
-    return sum(numbers)
-
-
-@shared_task
-def notify(message):
-    print(f"ATTENTION! {message}")
-    return message
-
-
-@shared_task
 def handle_nudge(task_name, due_date, user_id):
     """
     A nudge must know the due date, task name, and related notes/info. It must not
@@ -81,7 +59,10 @@ def handle_nudge(task_name, due_date, user_id):
         # TODO: deactivate nudge
 
 
-def generate_nudges(due_time: datetime, user: User, task_data: TaskData):
+def generate_nudges(due_time: datetime, user: User, task_data: TaskData) -> None:
+    """Generate nudges for a reminder. The number of nudges is determined by the
+    time between the due date and the current time.
+    """
     current_time = get_time(user)
     total_interval = (due_time - current_time).total_seconds() / 60
 
@@ -97,27 +78,9 @@ def generate_nudges(due_time: datetime, user: User, task_data: TaskData):
     for i in range(actual_num_nudges):
         next_nudge_time = current_time + timedelta(minutes=(i + 1) * actual_interval)
         print(f"Scheduling nudge {i+1} at {next_nudge_time}")
-        task_data = json.loads(task.kwargs)
-        task_data["next_run_time"] = next_nudge_time.isoformat()
-        task.kwargs = json.dumps(task_data)
+        task_data.next_run_time = next_nudge_time.isoformat()
 
-        # schedule the nudge
-        PeriodicTask.objects.create(
-            crontab=task.crontab,
-            name=(
-                str(user.id)
-                + "_Nudge at "
-                + str(next_nudge_time.hour)
-                + ":"
-                + str(next_nudge_time.minute)
-                + " on "
-                + str(next_nudge_time.day)
-            ),
-            task="Nudgie.tasks.handle_nudge",
-            kwargs=json.dumps({**json.loads(task.kwargs), "dialogue_type": "nudge"}),
-            one_off=True,
-            queue="nudgie",
-        )
+        schedule_nudge(task_data)
 
 
 @shared_task

@@ -5,7 +5,7 @@ from django_celery_beat.models import CrontabSchedule
 
 
 class TaskData(NamedTuple):
-    id: int
+    id: Optional[int] = None  # only exists if the task has already been scheduled
     crontab: CrontabSchedule
     task_name: str
     goal_name: str
