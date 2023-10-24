@@ -17,8 +17,6 @@ from Nudgie.util.constants import (
     QUEUE_NAME,
     DIALOGUE_TYPE_NUDGE,
     DIALOGUE_TYPE_REMINDER,
-    NUDGE_HANDLER,
-    REMINDER_HANDLER,
 )
 from Nudgie.util.periodic_task_helper import TaskData
 
@@ -34,7 +32,7 @@ def schedule_periodic_task(task_data: TaskData, celery_task: str):
         crontab=task_data.crontab,
         name=f"{task_data.dialogue_type} for {str(task_data.crontab)}",
         task=celery_task,
-        kwargs=json.dumps(task_data),
+        kwargs=task_data.get_as_kwargs(),
         one_off=task_data.dialogue_type == DIALOGUE_TYPE_NUDGE,
         queue=QUEUE_NAME,
     )
@@ -45,8 +43,8 @@ def schedule_nudge(task_data: TaskData):
     task_data is a dictionary of key-value pairs that will be passed as kwargs
     to the task.
     """
-    task_data.dialogue_type = DIALOGUE_TYPE_NUDGE
-    schedule_periodic_task(task_data.crontab, task_data, NUDGE_HANDLER)
+    new_task_data = task_data._replace(dialogue_type=DIALOGUE_TYPE_NUDGE)
+    schedule_periodic_task(task_data, new_task_data)
 
 
 def schedule_reminder(task_data: TaskData):
@@ -54,8 +52,8 @@ def schedule_reminder(task_data: TaskData):
     task_data is a dictionary of key-value pairs that will be passed as kwargs
     to the task.
     """
-    task_data.dialogue_type = DIALOGUE_TYPE_REMINDER
-    schedule_periodic_task(task_data.crontab, task_data, REMINDER_HANDLER)
+    new_task_data = task_data._replace(dialogue_type=DIALOGUE_TYPE_REMINDER)
+    schedule_periodic_task(task_data, new_task_data)
 
 
 def get_next_run_time(

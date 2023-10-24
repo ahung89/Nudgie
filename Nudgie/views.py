@@ -10,7 +10,7 @@ from django.contrib.auth.models import User
 
 from Nudgie.util.reminder_scheduler import get_next_run_time
 from Nudgie.util.time import get_time, set_time
-from .tasks import add, handle_nudge, handle_reminder
+from .tasks import handle_nudge, handle_reminder
 from .integrations.chatgpt import handle_convo
 from .models import Conversation, MockedTime, NudgieTask
 from .util.constants import DIALOGUE_TYPE_REMINDER, QUEUE_NAME

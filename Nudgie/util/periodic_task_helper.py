@@ -5,15 +5,27 @@ from django_celery_beat.models import CrontabSchedule
 
 
 class TaskData(NamedTuple):
-    id: Optional[int] = None  # only exists if the task has already been scheduled
     crontab: CrontabSchedule
     task_name: str
     goal_name: str
     user_id: int
     due_date: str
     dialogue_type: str
+    id: Optional[int] = None  # only exists if the task has already been scheduled
     reminder_notes: Optional[str] = None
     next_run_time: Optional[str] = None  # only for testing tool, get rid of later
+
+    def get_as_kwargs(self):
+        return json.dumps(
+            {
+                "task_name": self.task_name,
+                "goal_name": self.goal_name,
+                "due_date": self.due_date,
+                "dialogue_type": self.dialogue_type,
+                "reminder_notes": self.reminder_notes,
+                "next_run_time": self.next_run_time,
+            }
+        )
 
 
 def modify_periodic_task(
