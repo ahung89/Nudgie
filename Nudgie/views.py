@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 import json
 from django.forms import model_to_dict
 import pytz
-from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
+from django.http import HttpResponse, JsonResponse, HttpResponseRedirect, HttpRequest
 from django.shortcuts import render
 from django_celery_beat.models import PeriodicTask, CrontabSchedule
 from django.contrib.auth.models import User
@@ -14,6 +14,7 @@ from .tasks import add, handle_nudge, handle_reminder
 from .integrations.chatgpt import handle_convo
 from .models import Conversation, MockedTime, NudgieTask
 from Nudgie.util.dialogue import load_conversation
+from Nudgie.util.periodic_task_helper import get_periodic_task_data
 
 # how many seconds to fast forward by when triggering a reminder for testing
 TEST_FAST_FORWARD_SECONDS = 5
@@ -101,25 +102,34 @@ def get_task_list_display(request):
     )
 
 
-def trigger_task(request):
-    print("TRIGGERING DA TASK")
-    task_data = json.loads(request.body.decode("utf-8"))
-    task = PeriodicTask.objects.get(id=task_data["periodic_task_id"])
-    kwargs = json.loads(task.kwargs)
-
-    # fast forward
-    # TODO: this is a weird place to put this. the fast-forward stuff should really be
-    # in the handle_reminder method, right before the due dates are updated. It's quite
-    # possible that the completion check may eventually use the current time, and if that
-    # is the case then this will break it.
-    fast_forward_time = datetime.fromisoformat(task_data["next_run_time"])
+def fast_forward(target_time: datetime, user: User):
+    fast_forward_time = datetime.fromisoformat(target_time)
     fast_forward_time += timedelta(seconds=TEST_FAST_FORWARD_SECONDS)
-    print(
-        f"FAST FORWARDING TO {fast_forward_time}. {task_data['next_run_time']=} {get_time(request.user)=}"
-    )
-    set_time(request.user, fast_forward_time)
+    print(f"FAST FORWARDING TO {fast_forward_time}. {target_time=} {get_time(user)=}")
+    set_time(user, fast_forward_time)
 
-    if kwargs["dialogue_type"] == "reminder":
+
+def trigger_task(request: HttpRequest) -> HttpResponse:
+    """
+    This is the API for triggering a task. It is for testing purposes only.
+    """
+    task_data = get_periodic_task_data(
+        json.loads(request.body.decode("utf-8"))["periodic_task_id"]
+    )
+
+    crontab = task_data["crontab"]
+    fast_forward(
+        get_next_run_time(
+            crontab["minute"],
+            crontab["hour"],
+            crontab["day_of_month"],
+            crontab["month_of_year"],
+            crontab["day_of_week"],
+        ),
+        request.user,
+    )
+
+    if task_data["dialogue_type"] == "reminder":
         result = handle_reminder.apply_async(
             (
                 task_data["task_name"],
@@ -137,7 +147,7 @@ def trigger_task(request):
 
     print(f"RESULT OF TASK TRIGGER: {result}")
 
-    return HttpResponse("")
+    return HttpResponse(status=204)
 
 
 # for the initial conversation flow
