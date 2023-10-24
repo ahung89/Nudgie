@@ -117,14 +117,14 @@ def trigger_task(request: HttpRequest) -> HttpResponse:
         json.loads(request.body.decode("utf-8"))["periodic_task_id"]
     )
 
-    crontab = task_data["crontab"]
+    crontab = task_data.crontab
     fast_forward(
         get_next_run_time(
-            crontab["minute"],
-            crontab["hour"],
-            crontab["day_of_month"],
-            crontab["month_of_year"],
-            crontab["day_of_week"],
+            crontab.minute,
+            crontab.hour,
+            crontab.day_of_month,
+            crontab.month_of_year,
+            crontab.day_of_week,
         ),
         request.user,
     )
