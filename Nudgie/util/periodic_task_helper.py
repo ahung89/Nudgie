@@ -12,6 +12,7 @@ class TaskData(NamedTuple):
     user_id: int
     due_date: str
     dialogue_type: str
+    reminder_notes: Optional[str] = None
     next_run_time: Optional[str] = None  # only for testing tool, get rid of later
 
 
@@ -24,6 +25,7 @@ def modify_periodic_task(
     due_date: Optional[str] = None,
     dialogue_type: Optional[str] = None,
     next_run_time: Optional[str] = None,
+    reminder_notes: Optional[str] = None,
 ):
     task = PeriodicTask.objects.get(id=id)
     current_kwargs = json.loads(task.kwargs)
@@ -36,6 +38,7 @@ def modify_periodic_task(
         "due_date",
         "dialogue_type",
         "next_run_time",
+        "reminder_notes",
     ]:
         value = locals()[key]
         if value is not None:
@@ -57,4 +60,5 @@ def get_periodic_task_data(id):
         user_id=kwargs["user_id"],
         due_date=kwargs["due_date"],
         dialogue_type=kwargs.get("dialogue_type"),
+        reminder_notes=kwargs.get("reminder_notes"),
     )

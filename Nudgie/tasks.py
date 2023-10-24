@@ -5,10 +5,14 @@ from Nudgie.util.reminder_scheduler import calculate_due_date
 from Nudgie.integrations.chatgpt import trigger_nudge, trigger_reminder
 from Nudgie.util.time import get_time
 from .models import NudgieTask
-from .util.periodic_task_helper import get_periodic_task_data, modify_periodic_task
+from .util.periodic_task_helper import (
+    get_periodic_task_data,
+    modify_periodic_task,
+    TaskData,
+)
 from django_celery_beat.models import PeriodicTask
 from django.contrib.auth.models import User
-from datetime import timedelta
+from datetime import timedelta, datetime
 
 MAX_NUDGES_PER_REMINDER = 2
 MIN_MINUTES_BETWEEN_NUDGES = 60  # minutes
@@ -77,7 +81,7 @@ def handle_nudge(task_name, due_date, user_id):
         # TODO: deactivate nudge
 
 
-def generate_nudges(due_time, user, task):
+def generate_nudges(due_time: datetime, user: User, task_data: TaskData):
     current_time = get_time(user)
     total_interval = (due_time - current_time).total_seconds() / 60
 
@@ -154,6 +158,6 @@ def handle_reminder(periodic_task_id):
         due_date=new_due_date,
     )
     # Generate nudges.
-    generate_nudges(new_due_date, user, nudgie_task)
+    generate_nudges(new_due_date, user, task_data)
 
     return task_data.task_name

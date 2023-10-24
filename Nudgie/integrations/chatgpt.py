@@ -16,10 +16,10 @@ from Nudgie.config.chatgpt_inputs import (
 
 def trigger_reminder(user, task_data):
     message_content = REMINDER_PROMPT.format(
-        task_name=task_data["task_name"],
-        goal_name=task_data["goal_name"],
-        reminder_notes=task_data["reminder_notes"],
-        due_date=task_data["due_date"],
+        task_name=task_data.task_name,
+        goal_name=task_data.goal_name,
+        reminder_notes=task_data.reminder_notes,
+        due_date=task_data.due_date,
     )
     print(f"REMINDER-TRIGGERING MESSAGE: {message_content}")
     messages = load_conversation(user) + [{"role": "user", "content": message_content}]

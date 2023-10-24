@@ -13,6 +13,7 @@ from Nudgie.util.time import get_time, set_time
 from .tasks import add, handle_nudge, handle_reminder
 from .integrations.chatgpt import handle_convo
 from .models import Conversation, MockedTime, NudgieTask
+from .util.constants import DIALOGUE_TYPE_REMINDER, QUEUE_NAME
 from Nudgie.util.dialogue import load_conversation
 from Nudgie.util.periodic_task_helper import get_periodic_task_data
 
@@ -103,10 +104,9 @@ def get_task_list_display(request):
 
 
 def fast_forward(target_time: datetime, user: User):
-    fast_forward_time = datetime.fromisoformat(target_time)
-    fast_forward_time += timedelta(seconds=TEST_FAST_FORWARD_SECONDS)
-    print(f"FAST FORWARDING TO {fast_forward_time}. {target_time=} {get_time(user)=}")
-    set_time(user, fast_forward_time)
+    target_time += timedelta(seconds=TEST_FAST_FORWARD_SECONDS)
+    print(f"FAST FORWARDING TO {target_time=}. {get_time(user)=}")
+    set_time(user, target_time)
 
 
 def trigger_task(request: HttpRequest) -> HttpResponse:
@@ -125,24 +125,23 @@ def trigger_task(request: HttpRequest) -> HttpResponse:
             crontab.day_of_month,
             crontab.month_of_year,
             crontab.day_of_week,
+            request.user,
         ),
         request.user,
     )
 
-    if task_data["dialogue_type"] == "reminder":
+    if task_data.dialogue_type == DIALOGUE_TYPE_REMINDER:
+        print("I AM ONLY PASSING THIS IN: " + task_data.id)
         result = handle_reminder.apply_async(
-            (
-                task_data["task_name"],
-                task_data["due_date"],
-                request.user.id,
-                task_data["periodic_task_id"],
-            ),
-            queue="nudgie",
+            args=(
+                task_data.id,
+            ),  # you MUST have the comma after the id or else it won't be treated as a tuple
+            queue=QUEUE_NAME,
         ).get()
     else:
         result = handle_nudge.apply_async(
-            (task_data["task_name"], task_data["due_date"], request.user.id),
-            queue="nudgie",
+            (task_data.task_name, task_data.due_date, request.user.id),
+            queue=QUEUE_NAME,
         ).get()
 
     print(f"RESULT OF TASK TRIGGER: {result}")
