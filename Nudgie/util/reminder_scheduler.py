@@ -9,7 +9,18 @@ from Nudgie.util.time import get_time
 CRONTAB_FIELDS = ["minute", "hour", "day_of_week"]
 
 
-def get_next_run_time(crontab_str: str, user: User):
+def get_next_run_time(
+    minute: int,
+    hour: int,
+    day_of_month: int,
+    month_of_year: int,
+    day_of_week: int,
+    user: User,
+):
+    crontab_str = (
+        f"{minute} {hour} " f"{day_of_month} {month_of_year} " f"{day_of_week}"
+    )
+    print(f"CRON_STR IS {crontab_str}")
     iter = croniter(crontab_str, get_time(user))
     next_run_time = iter.get_next(datetime)
     return next_run_time
@@ -19,16 +30,22 @@ def end_of_day(dt):
     return dt.replace(hour=23, minute=59, second=59)
 
 
-def calculate_due_date(crontab: dict[str, str], user: User):
+def calculate_due_date(
+    minute: int,
+    hour: int,
+    day_of_month: int,
+    month_of_year: int,
+    day_of_week: int,
+    user: User,
+):
     """Given a crontab object (key-val pairs), calculate the next due date for the task.
     By default, the due date is the end of the day of the next time the crontab
     will run. For example, if the crontab is set to run at 9:00 AM on Monday,
     the due date will be 11:59 PM on Monday.
     """
-    # convert to string form
-    cron_str = f"{crontab['minute']} {crontab['hour']} * * {crontab['day_of_week']}"
-    print(f"CRON_STR IS {cron_str}")
-    return end_of_day(get_next_run_time(cron_str, user))
+    return end_of_day(
+        get_next_run_time(minute, hour, day_of_month, month_of_year, day_of_week, user)
+    )
 
 
 def schedule_tasks_from_crontab_list(crontab_list, user):
@@ -38,7 +55,14 @@ def schedule_tasks_from_crontab_list(crontab_list, user):
 
         cron_schedule, _ = CrontabSchedule.objects.get_or_create(**notif_cron)
 
-        due_date = calculate_due_date(notif_cron, user)
+        due_date = calculate_due_date(
+            notif_cron["minute"],
+            notif_cron["hour"],
+            "*",
+            "*",
+            notif_cron["day_of_week"],
+            user,
+        )
 
         notif["reminder_data"]["due_date"] = due_date.isoformat()
         # to deserialize, call date.fromisoformat(due_date) (date being imported from datetime)

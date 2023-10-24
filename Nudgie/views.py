@@ -36,9 +36,11 @@ def get_task_list_with_next_run(user: User):
     tasks = sorted(
         tasks,
         key=lambda task: get_next_run_time(
-            f"{task.crontab.minute} {task.crontab.hour} "
-            f"{task.crontab.day_of_month} {task.crontab.month_of_year} "
-            f"{task.crontab.day_of_week}",
+            task.crontab.minute,
+            task.crontab.hour,
+            task.crontab.day_of_month,
+            task.crontab.month_of_year,
+            task.crontab.day_of_week,
             user,
         )
         if json.loads(task.kwargs)["dialogue_type"] != "nudge"
@@ -49,9 +51,11 @@ def get_task_list_with_next_run(user: User):
         {
             **model_to_dict(task),
             "next_run_time": get_next_run_time(
-                crontab_str=f"{task.crontab.minute} {task.crontab.hour} "
-                f"{task.crontab.day_of_month} {task.crontab.month_of_year} "
-                f"{task.crontab.day_of_week}",
+                task.crontab.minute,
+                task.crontab.hour,
+                task.crontab.day_of_month,
+                task.crontab.month_of_year,
+                task.crontab.day_of_week,
                 user=user,
             ).isoformat()
             if json.loads(task.kwargs)["dialogue_type"] != "nudge"

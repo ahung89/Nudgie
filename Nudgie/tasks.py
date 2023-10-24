@@ -131,13 +131,15 @@ def handle_reminder(task_name, due_date, user_id, periodic_task_id):
 
     # calculate the next due-date and save it to the PeriodicTask
     crontab_schedule = task.crontab
-    crontab_dict = {
-        "minute": crontab_schedule.minute,
-        "hour": crontab_schedule.hour,
-        "day_of_week": crontab_schedule.day_of_week,
-    }
 
-    new_due_date = calculate_due_date(crontab_dict, user)
+    new_due_date = calculate_due_date(
+        task.crontab.minute,
+        task.crontab.hour,
+        task.crontab.day_of_month,
+        task.crontab.month_of_year,
+        task.crontab.day_of_week,
+        user,
+    )
     print(f"NEW DUE DATE: {new_due_date}")
     task_data["due_date"] = new_due_date.isoformat()
     task.kwargs = json.dumps(task_data)
