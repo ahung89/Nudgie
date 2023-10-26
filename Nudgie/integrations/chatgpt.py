@@ -14,6 +14,16 @@ from Nudgie.config.chatgpt_inputs import (
 )
 
 
+def call_openai_api(messages: list[str], functions: list):
+    """
+    Calls the OpenAI API and returns the response.
+    """
+    response = openai.ChatCompletion.create(
+        model=CHAT_GPT_MODEL, messages=messages, functions=functions
+    )
+    return response.choices[0].message
+
+
 def trigger_reminder(user, task_data):
     message_content = REMINDER_PROMPT.format(
         task_name=task_data.task_name,
@@ -26,11 +36,8 @@ def trigger_reminder(user, task_data):
     api_messages = [get_system_message_standard(), *messages]
     print(f"API MESSAGES: {api_messages}")
 
-    response = openai.ChatCompletion.create(
-        model=CHAT_GPT_MODEL, messages=api_messages, functions=ONGOING_CONVO_FUNCTIONS
-    )
-
-    response_text = response.choices[0].message.content
+    response = call_openai_api(api_messages, ONGOING_CONVO_FUNCTIONS)
+    response_text = response.content
     messages.append({"role": "assistant", "content": response_text})
 
     system_prompt = Conversation(
@@ -55,11 +62,8 @@ def trigger_nudge(user):
     api_messages = [get_system_message_standard(), *messages]
     print(f"API MESSAGES: {api_messages}")
 
-    response = openai.ChatCompletion.create(
-        model=CHAT_GPT_MODEL, messages=api_messages, functions=ONGOING_CONVO_FUNCTIONS
-    )
-
-    response_text = response.choices[0].message.content
+    response = call_openai_api(api_messages, ONGOING_CONVO_FUNCTIONS)
+    response_text = response.content
     messages.append({"role": "assistant", "content": response_text})
 
     system_prompt = Conversation(user=user, message_type="user", content=NUDGE_PROMPT)
@@ -84,15 +88,12 @@ def handle_convo(prompt, messages, user, has_nudgie_tasks):
         else get_system_message_for_initial_convo()
     ]
     api_messages.extend(messages)
-    response = openai.ChatCompletion.create(
-        model=CHAT_GPT_MODEL,
-        messages=api_messages,
-        functions=ONGOING_CONVO_FUNCTIONS
-        if has_nudgie_tasks
-        else INITIAL_CONVO_FUNCTIONS,
+    response = call_openai_api(
+        api_messages,
+        ONGOING_CONVO_FUNCTIONS if has_nudgie_tasks else INITIAL_CONVO_FUNCTIONS,
     )
 
-    if "function_call" in response.choices[0].message:
+    if "function_call" in response:
         schedule_tasks_from_crontab_list(
             json.loads(response.choices[0].message.function_call.arguments)[
                 "schedules"

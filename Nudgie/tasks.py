@@ -70,7 +70,7 @@ def handle_nudge(task_name, due_date, user_id):
 
 def generate_nudges(user: User, task_data: TaskData) -> None:
     """Generate nudges for a reminder. The number of nudges is determined by the
-    time between the due date and the current time.
+    time between the due date and the current time, with a bit of cushion added to the end.
     """
     last_possible_nudge_time = datetime.fromisoformat(task_data.due_date) - timedelta(
         minutes=MIN_TIME_BETWEEN_LAST_NUDGE_AND_DUE_DATE

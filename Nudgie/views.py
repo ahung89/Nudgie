@@ -1,8 +1,6 @@
-from ast import parse
 from datetime import datetime, timedelta
 import json
 from django.forms import model_to_dict
-import pytz
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect, HttpRequest
 from django.shortcuts import render
 from django_celery_beat.models import PeriodicTask, CrontabSchedule
@@ -113,25 +111,12 @@ def chatbot_api(request):
     if request.method == "POST":
         data = json.loads(request.body.decode("utf-8"))
         user_input = data.get("message")
-        datetime_str = data.get("datetime")
-
-        # get the passed-in datetime into the same form as the date in the NudgieTask
-        # this passed-in datetime is the user-side time. don't replace it with the mocked value for the
-        # server time since this simulates what the user sends in when he texts.
-        naive_datetime = datetime.strptime(datetime_str, "%Y-%m-%dT%H:%M:%S")
-        print(naive_datetime)
-        my_timezone = pytz.timezone("UTC")  # Replace with your time zone
-        aware_datetime = my_timezone.localize(naive_datetime)
-        formatted_datetime = aware_datetime.strftime("%Y-%m-%dT%H:%M:%S")
-        print(formatted_datetime)
 
         print(f"RECEIVED INPUT. User input: {user_input}")
         convo = load_conversation(request.user)
 
         # determine which flow to use
         has_nudgie_tasks = NudgieTask.objects.filter(user=request.user).exists()
-        print(f"HAS NUDGIE TASKS? {has_nudgie_tasks}")
-
         bot_response = handle_convo(user_input, convo, request.user, has_nudgie_tasks)
 
         user_convo_entry = Conversation(
