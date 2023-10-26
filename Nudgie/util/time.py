@@ -6,7 +6,11 @@ import pytz
 TESTING = True
 
 
-def get_time(user: User):
+def localize(dt: datetime):
+    return pytz.timezone("UTC").localize(dt)
+
+
+def get_time(user: User) -> datetime:
     if TESTING:
         # that second return value is a boolean that tells us whether or not the
         # object was created. It's not terribly useful here.
@@ -14,12 +18,12 @@ def get_time(user: User):
             mocked_time_obj = MockedTime.objects.get(user=user)
         except MockedTime.DoesNotExist:
             # Time hasn't been mocked yet - returning actual time.
-            return datetime.now()
+            return localize(datetime.now())
 
         print(f"USING MOCKED TIME: {mocked_time_obj.mocked_time}")
         return mocked_time_obj.mocked_time
     else:
-        return datetime.now()
+        return localize(datetime.now())
 
 
 def set_time(user: User, new_time: datetime):
@@ -33,7 +37,3 @@ def set_time(user: User, new_time: datetime):
     print(f"SETTING MOCKED TIME: {mocked_time_obj.mocked_time}")
 
     return mocked_time_obj.mocked_time
-
-
-def localize(dt: datetime):
-    return pytz.timezone("UTC").localize(dt)

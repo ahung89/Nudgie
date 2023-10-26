@@ -97,6 +97,17 @@ def calculate_due_date(
     )
 
 
+def calculate_due_date_from_crontab(crontab_schedule: CrontabSchedule, user: User):
+    return calculate_due_date(
+        crontab_schedule.minute,
+        crontab_schedule.hour,
+        crontab_schedule.day_of_month,
+        crontab_schedule.month_of_year,
+        crontab_schedule.day_of_week,
+        user,
+    )
+
+
 def convert_chatgpt_task_data_to_task_data(
     chatgpt_task_data: dict[Any, Any], user: User
 ) -> TaskData:
@@ -127,15 +138,13 @@ def convert_chatgpt_task_data_to_task_data(
         reminder_notes=chatgpt_task_data[REMINDER_DATA_AI_STRUCT_KEY][
             REMINDER_NOTES_AI_STRUCT_KEY
         ],
-        next_run_time=localize(
-            get_next_run_time(
-                cron_schedule.minute,
-                cron_schedule.hour,
-                cron_schedule.day_of_month,
-                cron_schedule.month_of_year,
-                cron_schedule.day_of_week,
-                user,
-            )
+        next_run_time=get_next_run_time(
+            cron_schedule.minute,
+            cron_schedule.hour,
+            cron_schedule.day_of_month,
+            cron_schedule.month_of_year,
+            cron_schedule.day_of_week,
+            user,
         ).isoformat(),
     )
 

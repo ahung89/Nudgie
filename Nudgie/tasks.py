@@ -2,7 +2,7 @@ import json
 from celery import shared_task
 
 from Nudgie.util.reminder_scheduler import (
-    calculate_due_date,
+    calculate_due_date_from_crontab,
     schedule_nudge,
     get_next_run_time,
 )
@@ -14,11 +14,14 @@ from .util.periodic_task_helper import (
     modify_periodic_task,
     TaskData,
 )
+from .util.constants import (
+    MAX_NUDGES_PER_REMINDER,
+    MIN_MINUTES_BETWEEN_NUDGES,
+    MIN_TIME_BETWEEN_LAST_NUDGE_AND_DUE_DATE,
+)
 from django.contrib.auth.models import User
 from datetime import timedelta, datetime
 
-MAX_NUDGES_PER_REMINDER = 2
-MIN_MINUTES_BETWEEN_NUDGES = 60  # minutes
 
 # for app.autodiscover_tasks() to work, you need to define a tasks.py file in each app.
 # that's why this file is here.
@@ -63,12 +66,15 @@ def handle_nudge(task_name, due_date, user_id):
         # TODO: deactivate nudge
 
 
-def generate_nudges(due_time: datetime, user: User, task_data: TaskData) -> None:
+def generate_nudges(user: User, task_data: TaskData) -> None:
     """Generate nudges for a reminder. The number of nudges is determined by the
     time between the due date and the current time.
     """
+    last_possible_nudge_time = datetime.fromisoformat(task_data.due_date) - timedelta(
+        minutes=MIN_TIME_BETWEEN_LAST_NUDGE_AND_DUE_DATE
+    )
     current_time = get_time(user)
-    total_interval = (due_time - current_time).total_seconds() / 60
+    total_interval = (last_possible_nudge_time - current_time).total_seconds() / 60
 
     num_nudges_that_fit = int(total_interval // MIN_MINUTES_BETWEEN_NUDGES)
     actual_num_nudges = min(MAX_NUDGES_PER_REMINDER, num_nudges_that_fit)
@@ -101,18 +107,12 @@ def handle_reminder(periodic_task_id):
     if not nudgie_task.completed:
         print("task incomplete, sending reminder")
         trigger_reminder(user, task_data)
+        generate_nudges(user, task_data)
 
     # calculate the next due-date and save it to the PeriodicTask
     crontab_schedule = task_data.crontab
 
-    new_due_date = calculate_due_date(
-        crontab_schedule.minute,
-        crontab_schedule.hour,
-        crontab_schedule.day_of_month,
-        crontab_schedule.month_of_year,
-        crontab_schedule.day_of_week,
-        user,
-    )
+    new_due_date = calculate_due_date_from_crontab(crontab_schedule, user)
 
     print(f"NEW DUE DATE: {new_due_date}")
     modify_periodic_task(
@@ -134,10 +134,6 @@ def handle_reminder(periodic_task_id):
         task_name=task_data.task_name,
         goal_name=task_data.goal_name,
         due_date=new_due_date,
-    )
-    # Generate nudges.
-    generate_nudges(
-        new_due_date, user, task_data._replace(due_date=new_due_date.isoformat())
     )
 
     return task_data.task_name
