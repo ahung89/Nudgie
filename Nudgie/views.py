@@ -23,38 +23,14 @@ TEST_FAST_FORWARD_SECONDS = 5
 
 def get_task_list_with_next_run(user: User):
     """helper view for getting list of PeriodicTasks for the test tool"""
-    tasks = PeriodicTask.objects.exclude(task="celery.backend_cleanup")
-
     tasks = sorted(
-        tasks,
-        key=lambda task: get_next_run_time(
-            task.crontab.minute,
-            task.crontab.hour,
-            task.crontab.day_of_month,
-            task.crontab.month_of_year,
-            task.crontab.day_of_week,
-            user,
-        )
-        if json.loads(task.kwargs)["dialogue_type"] != "nudge"
-        else datetime.fromisoformat(json.loads(task.kwargs)["next_run_time"]),
+        PeriodicTask.objects.exclude(task="celery.backend_cleanup"),
+        key=lambda task: datetime.fromisoformat(
+            json.loads(task.kwargs)["next_run_time"]
+        ),
     )
 
-    return [
-        {
-            **model_to_dict(task),
-            "next_run_time": get_next_run_time(
-                task.crontab.minute,
-                task.crontab.hour,
-                task.crontab.day_of_month,
-                task.crontab.month_of_year,
-                task.crontab.day_of_week,
-                user=user,
-            ).isoformat()
-            if json.loads(task.kwargs)["dialogue_type"] != "nudge"
-            else json.loads(task.kwargs)["next_run_time"],
-        }
-        for task in tasks
-    ]
+    return [{**model_to_dict(task)} for task in tasks]
 
 
 def chatbot_view(request):
@@ -179,7 +155,10 @@ def chatbot_api(request):
 def reset_user_data(request):
     Conversation.objects.filter(user=request.user).delete()
     NudgieTask.objects.filter(user=request.user).delete()
-    PeriodicTask.objects.filter(name__startswith=f"{request.user.id}").delete()
+    # PeriodicTask.objects.filter(name__startswith=f"{request.user.id}").delete()
+    PeriodicTask.objects.filter(
+        kwargs__contains=f'"user_id": {request.user.id}'
+    ).delete()
     CrontabSchedule.objects.exclude(periodictask__isnull=False).delete()
     MockedTime.objects.filter(user=request.user).delete()
 

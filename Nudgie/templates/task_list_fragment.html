@@ -6,21 +6,19 @@
 </span>
 <ul id="task_list">
     {% for task in tasks %}
-        <li>
-            <strong id="task_name">Habit name:</strong> {{ task.kwargs|get_attr_from_json:"task_name" }} <br>
-            <strong>Next Scheduled Run:</strong> {{ task.next_run_time }}<br>
-            <strong id="due_date">Due Date:</strong> {{ task.kwargs|get_attr_from_json:"due_date" }}<br>
-            <strong>Cron Expression:</strong> {{ task.crontab }} <br>
-            <strong>Task Name:</strong> {{ task.task }} <br>
-            <!-- Add a button to trigger the task -->
-            <button 
-                class="task-trigger-btn"
-                data-task-name="{{ task.kwargs|get_attr_from_json:'task_name' }}"
-                data-due-date="{{ task.kwargs|get_attr_from_json:'due_date' }}"
-                data-next-run-time="{{ task.next_run_time }}"
-                data-periodic-task-id="{{ task.id }}">
-                    Trigger Task
-            </button>
-        </li>
+    <li>
+        <strong id="task_name">Habit name:</strong> {{ task.kwargs|get_attr_from_json:"task_name" }} <br>
+        <strong>Next Scheduled Run:</strong> {{ task.kwargs|get_attr_from_json:'next_run_time' }}<br>
+        <strong id="due_date">Due Date:</strong> {{ task.kwargs|get_attr_from_json:"due_date" }}<br>
+        <strong>Cron Expression:</strong> {{ task.crontab }} <br>
+        <strong>Task Name:</strong> {{ task.task }} <br>
+        <!-- Add a button to trigger the task -->
+        <button class="task-trigger-btn" data-task-name="{{ task.kwargs|get_attr_from_json:'task_name' }}"
+            data-due-date="{{ task.kwargs|get_attr_from_json:'due_date' }}"
+            data-next-run-time="{{ task.kwargs|get_attr_from_json:'next_run_time' }}"
+            data-periodic-task-id="{{ task.id }}">
+            Trigger Task
+        </button>
+    </li>
     {% endfor %}
 </ul>

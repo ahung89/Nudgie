@@ -1,5 +1,4 @@
 from django_celery_beat.models import PeriodicTask, CrontabSchedule
-import json
 from croniter import croniter
 from datetime import datetime
 from django.contrib.auth.models import User
@@ -10,9 +9,11 @@ from Nudgie.util.constants import (
     GOAL_NAME_AI_STRUCT_KEY,
     REMINDER_NOTES_AI_STRUCT_KEY,
     CRONTAB_AI_STRUCT_KEY,
+    NUDGE_HANDLER,
+    REMINDER_HANDLER,
 )
 from typing import Any
-from Nudgie.util.time import get_time
+from Nudgie.util.time import get_time, localize
 from Nudgie.util.constants import (
     QUEUE_NAME,
     DIALOGUE_TYPE_NUDGE,
@@ -30,7 +31,7 @@ def schedule_periodic_task(task_data: TaskData, celery_task: str):
     """
     PeriodicTask.objects.create(
         crontab=task_data.crontab,
-        name=f"{task_data.dialogue_type} for {str(task_data.crontab)}",
+        name=f"{task_data.user_id}: {task_data.dialogue_type} for {str(task_data.crontab)} created at {datetime.now().isoformat()}",
         task=celery_task,
         kwargs=task_data.get_as_kwargs(),
         one_off=task_data.dialogue_type == DIALOGUE_TYPE_NUDGE,
@@ -44,7 +45,7 @@ def schedule_nudge(task_data: TaskData):
     to the task.
     """
     new_task_data = task_data._replace(dialogue_type=DIALOGUE_TYPE_NUDGE)
-    schedule_periodic_task(task_data, new_task_data)
+    schedule_periodic_task(new_task_data, NUDGE_HANDLER)
 
 
 def schedule_reminder(task_data: TaskData):
@@ -53,7 +54,7 @@ def schedule_reminder(task_data: TaskData):
     to the task.
     """
     new_task_data = task_data._replace(dialogue_type=DIALOGUE_TYPE_REMINDER)
-    schedule_periodic_task(task_data, new_task_data)
+    schedule_periodic_task(new_task_data, REMINDER_HANDLER)
 
 
 def get_next_run_time(
@@ -126,6 +127,16 @@ def convert_chatgpt_task_data_to_task_data(
         reminder_notes=chatgpt_task_data[REMINDER_DATA_AI_STRUCT_KEY][
             REMINDER_NOTES_AI_STRUCT_KEY
         ],
+        next_run_time=localize(
+            get_next_run_time(
+                cron_schedule.minute,
+                cron_schedule.hour,
+                cron_schedule.day_of_month,
+                cron_schedule.month_of_year,
+                cron_schedule.day_of_week,
+                user,
+            )
+        ).isoformat(),
     )
 
 

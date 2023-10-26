@@ -1,6 +1,7 @@
 from datetime import datetime
 from django.contrib.auth.models import User
 from Nudgie.models import MockedTime
+import pytz
 
 TESTING = True
 
@@ -32,3 +33,7 @@ def set_time(user: User, new_time: datetime):
     print(f"SETTING MOCKED TIME: {mocked_time_obj.mocked_time}")
 
     return mocked_time_obj.mocked_time
+
+
+def localize(dt: datetime):
+    return pytz.timezone("UTC").localize(dt)

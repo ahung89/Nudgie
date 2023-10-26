@@ -37,7 +37,8 @@ identifier for the task (e.g. practice_dance, lift_weights, etc). There can be d
 Pay attention to any extra info the user tells you which may be relevant to crafting the reminder, and take brief notes of it and
 put those notes in the reminder_notes field of the reminder_data object. These notes are for you, not for the user, and they will
 be fed into the prompt which helps generate the reminder text. These should be things that are relevant to motivation or ability
-to complete the task, e.g. the user telling you that he often has trouble on mondays due to hectic work schedule.
+to complete the task, e.g. the user telling you that he often has trouble on mondays due to hectic work schedule. Do NOT ever mention
+the function call or any of these identifiers in your message, just call the function directly.
 
 Also do not explicitly talk about the function calls to the user, this is an internal detail.
 

@@ -1,7 +1,11 @@
 import json
 from celery import shared_task
 
-from Nudgie.util.reminder_scheduler import calculate_due_date, schedule_nudge
+from Nudgie.util.reminder_scheduler import (
+    calculate_due_date,
+    schedule_nudge,
+    get_next_run_time,
+)
 from Nudgie.integrations.chatgpt import trigger_nudge, trigger_reminder
 from Nudgie.util.time import get_time
 from .models import NudgieTask
@@ -78,7 +82,7 @@ def generate_nudges(due_time: datetime, user: User, task_data: TaskData) -> None
     for i in range(actual_num_nudges):
         next_nudge_time = current_time + timedelta(minutes=(i + 1) * actual_interval)
         print(f"Scheduling nudge {i+1} at {next_nudge_time}")
-        task_data.next_run_time = next_nudge_time.isoformat()
+        task_data = task_data._replace(next_run_time=next_nudge_time.isoformat())
 
         schedule_nudge(task_data)
 
@@ -111,7 +115,18 @@ def handle_reminder(periodic_task_id):
     )
 
     print(f"NEW DUE DATE: {new_due_date}")
-    modify_periodic_task(periodic_task_id, due_date=new_due_date.isoformat())
+    modify_periodic_task(
+        periodic_task_id,
+        due_date=new_due_date.isoformat(),
+        next_run_time=get_next_run_time(
+            crontab_schedule.minute,
+            crontab_schedule.hour,
+            crontab_schedule.day_of_month,
+            crontab_schedule.month_of_year,
+            crontab_schedule.day_of_week,
+            user,
+        ).isoformat(),
+    )
 
     # Create a new NudgieTask object with the new due date
     NudgieTask.objects.create(
@@ -121,6 +136,8 @@ def handle_reminder(periodic_task_id):
         due_date=new_due_date,
     )
     # Generate nudges.
-    generate_nudges(new_due_date, user, task_data)
+    generate_nudges(
+        new_due_date, user, task_data._replace(due_date=new_due_date.isoformat())
+    )
 
     return task_data.task_name
