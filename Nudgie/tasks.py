@@ -2,12 +2,14 @@ import json
 from celery import shared_task
 
 from Nudgie.util.reminder_scheduler import (
-    calculate_due_date_from_crontab,
     schedule_nudge,
-    get_next_run_time,
 )
 from Nudgie.integrations.chatgpt import trigger_nudge, trigger_reminder
-from Nudgie.util.time import get_time
+from Nudgie.util.time import (
+    get_time,
+    calculate_due_date_from_crontab,
+    get_next_run_time_from_crontab,
+)
 from .models import NudgieTask
 from .util.periodic_task_helper import (
     get_periodic_task_data,
@@ -110,20 +112,14 @@ def handle_reminder(periodic_task_id):
         generate_nudges(user, task_data)
 
     # calculate the next due-date and save it to the PeriodicTask
-    crontab_schedule = task_data.crontab
-
-    new_due_date = calculate_due_date_from_crontab(crontab_schedule, user)
+    new_due_date = calculate_due_date_from_crontab(task_data.crontab, user)
 
     print(f"NEW DUE DATE: {new_due_date}")
     modify_periodic_task(
         periodic_task_id,
         due_date=new_due_date.isoformat(),
-        next_run_time=get_next_run_time(
-            crontab_schedule.minute,
-            crontab_schedule.hour,
-            crontab_schedule.day_of_month,
-            crontab_schedule.month_of_year,
-            crontab_schedule.day_of_week,
+        next_run_time=get_next_run_time_from_crontab(
+            task_data.crontab,
             user,
         ).isoformat(),
     )

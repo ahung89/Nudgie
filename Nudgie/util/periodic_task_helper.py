@@ -1,7 +1,20 @@
 import json
+from django.contrib.auth.models import User
 from django_celery_beat.models import PeriodicTask
-from typing import NamedTuple, Optional
+from typing import NamedTuple, Optional, Any
 from django_celery_beat.models import CrontabSchedule
+from Nudgie.util.time import (
+    calculate_due_date_from_crontab,
+    get_next_run_time_from_crontab,
+)
+from Nudgie.util.constants import (
+    REMINDER_DATA_AI_STRUCT_KEY,
+    TASK_NAME_AI_STRUCT_KEY,
+    GOAL_NAME_AI_STRUCT_KEY,
+    REMINDER_NOTES_AI_STRUCT_KEY,
+    CRONTAB_AI_STRUCT_KEY,
+    DIALOGUE_TYPE_REMINDER,
+)
 
 
 class TaskData(NamedTuple):
@@ -72,4 +85,34 @@ def get_periodic_task_data(id):
         due_date=kwargs["due_date"],
         dialogue_type=kwargs.get("dialogue_type"),
         reminder_notes=kwargs.get("reminder_notes"),
+    )
+
+
+def convert_chatgpt_task_data_to_task_data(
+    chatgpt_task_data: dict[Any, Any], user: User
+) -> TaskData:
+    """Convert a dictionary of key-value pairs from the chatgpt task data to a TaskData object."""
+    cron_schedule, _ = CrontabSchedule.objects.get_or_create(
+        chatgpt_task_data[CRONTAB_AI_STRUCT_KEY]
+    )
+    due_date = calculate_due_date_from_crontab(cron_schedule, user).isoformat()
+
+    return TaskData(
+        crontab=cron_schedule,
+        task_name=chatgpt_task_data[REMINDER_DATA_AI_STRUCT_KEY][
+            TASK_NAME_AI_STRUCT_KEY
+        ],
+        goal_name=chatgpt_task_data[REMINDER_DATA_AI_STRUCT_KEY][
+            GOAL_NAME_AI_STRUCT_KEY
+        ],
+        user_id=user.id,
+        due_date=due_date,
+        dialogue_type=DIALOGUE_TYPE_REMINDER,  # Always reminders, the AI doesn't schedule nudges
+        reminder_notes=chatgpt_task_data[REMINDER_DATA_AI_STRUCT_KEY][
+            REMINDER_NOTES_AI_STRUCT_KEY
+        ],
+        next_run_time=get_next_run_time_from_crontab(
+            cron_schedule,
+            user,
+        ).isoformat(),
     )

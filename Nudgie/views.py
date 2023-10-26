@@ -8,8 +8,7 @@ from django.shortcuts import render
 from django_celery_beat.models import PeriodicTask, CrontabSchedule
 from django.contrib.auth.models import User
 
-from Nudgie.util.reminder_scheduler import get_next_run_time
-from Nudgie.util.time import get_time, set_time
+from Nudgie.util.time import get_time, set_time, get_next_run_time_from_crontab
 from .tasks import handle_nudge, handle_reminder
 from .integrations.chatgpt import handle_convo
 from .models import Conversation, MockedTime, NudgieTask
@@ -84,12 +83,8 @@ def trigger_task(request: HttpRequest) -> HttpResponse:
 
     crontab = task_data.crontab
     fast_forward(
-        get_next_run_time(
-            crontab.minute,
-            crontab.hour,
-            crontab.day_of_month,
-            crontab.month_of_year,
-            crontab.day_of_week,
+        get_next_run_time_from_crontab(
+            crontab,
             request.user,
         ),
         request.user,
