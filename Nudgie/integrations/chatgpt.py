@@ -95,9 +95,7 @@ def handle_convo(prompt, messages, user, has_nudgie_tasks):
 
     if "function_call" in response:
         schedule_tasks_from_crontab_list(
-            json.loads(response.choices[0].message.function_call.arguments)[
-                "schedules"
-            ],
+            json.loads(response.function_call.arguments)["schedules"],
             user,
         )
         messages.append(
@@ -107,11 +105,9 @@ def handle_convo(prompt, messages, user, has_nudgie_tasks):
                 "content": "Success.",
             }
         )
-        response = openai.ChatCompletion.create(
-            model=CHAT_GPT_MODEL, messages=messages, functions=INITIAL_CONVO_FUNCTIONS
-        )
+        response = call_openai_api(messages, INITIAL_CONVO_FUNCTIONS)
 
-    response_text = response.choices[0].message.content
+    response_text = response.content
     messages.append({"role": "assistant", "content": response_text})
     return response_text
 
