@@ -12,6 +12,62 @@ from Nudgie.config.chatgpt_inputs import (
     ONGOING_CONVO_FUNCTIONS,
     CHAT_GPT_MODEL,
 )
+from Nudgie.constants import (
+    CHATGPT_FUNCTION_CALL_KEY,
+    CHATGPT_SCHEDULES_KEY,
+    CHATGPT_ROLE_KEY,
+    CHATGPT_CONTENT_KEY,
+    CHATGPT_FUNCTION_NAME_KEY,
+    CHATGPT_USER_ROLE,
+    CHATGPT_ASSISTANT_ROLE,
+    CHATGPT_SYSTEM_ROLE,
+    CHATGPT_FUNCTION_ROLE,
+    CHATGPT_DEFAULT_FUNCTION_SUCCESS_MESSAGE,
+    CHATGPT_REGISTER_NOTIFICATIONS_FUNCTION,
+)
+
+
+def has_function_call(response) -> bool:
+    """
+    Determines whether the response from the OpenAI API contains a function call.
+    """
+    return CHATGPT_FUNCTION_CALL_KEY in response
+
+
+def generate_chat_gpt_standard_message(role: str, content: str) -> dict:
+    """
+    Generates a message for the ChatGPT API.
+    """
+    return {
+        CHATGPT_ROLE_KEY: role,
+        CHATGPT_CONTENT_KEY: content,
+    }
+
+
+def generate_chatgpt_function_success_message(function_name: str) -> str:
+    """
+    Generates a success message for a function call.
+    """
+    return {
+        CHATGPT_ROLE_KEY: CHATGPT_FUNCTION_ROLE,
+        CHATGPT_FUNCTION_NAME_KEY: function_name,
+        CHATGPT_CONTENT_KEY: CHATGPT_DEFAULT_FUNCTION_SUCCESS_MESSAGE,
+    }
+
+
+def handle_function_call(function_name: str, function_args: dict, user):
+    """
+    Handles a function call from the OpenAI API.
+    """
+    if function_name == CHATGPT_REGISTER_NOTIFICATIONS_FUNCTION:
+        schedule_tasks_from_crontab_list(
+            json.loads(function_args[CHATGPT_SCHEDULES_KEY]),
+            user,
+        )
+    else:
+        raise NotImplementedError(
+            f"Function {function_name} is not implemented in ChatGPT."
+        )
 
 
 def call_openai_api(messages: list[str], functions: list):
@@ -80,8 +136,12 @@ def trigger_nudge(user):
     return None
 
 
-def handle_convo(prompt, messages, user, has_nudgie_tasks):
-    messages.append({"role": "user", "content": prompt})
+def handle_convo(prompt, messages, user, has_nudgie_tasks) -> str:
+    """
+    Calls OpenAI with the user's input and responds accordingly based on the AI's
+    response. Returns the final output to display to the user.
+    """
+    messages.append(generate_chat_gpt_standard_message(CHATGPT_USER_ROLE, prompt))
     api_messages = [
         get_system_message_standard()
         if has_nudgie_tasks
@@ -93,22 +153,24 @@ def handle_convo(prompt, messages, user, has_nudgie_tasks):
         ONGOING_CONVO_FUNCTIONS if has_nudgie_tasks else INITIAL_CONVO_FUNCTIONS,
     )
 
-    if "function_call" in response:
-        schedule_tasks_from_crontab_list(
-            json.loads(response.function_call.arguments)["schedules"],
+    if has_function_call(response):
+        handle_function_call(
+            response.function_call.function,
+            json.loads(response.function_call.arguments),
             user,
         )
         messages.append(
-            {
-                "role": "function",
-                "name": "register_notifications",
-                "content": "Success.",
-            }
+            generate_chatgpt_function_success_message(
+                CHATGPT_REGISTER_NOTIFICATIONS_FUNCTION
+            )
         )
+        # Generate a response to the user based on the function call.
         response = call_openai_api(messages, INITIAL_CONVO_FUNCTIONS)
 
     response_text = response.content
-    messages.append({"role": "assistant", "content": response_text})
+    messages.append(
+        generate_chat_gpt_standard_message(CHATGPT_ASSISTANT_ROLE, response_text)
+    )
     return response_text
 
 
@@ -117,7 +179,9 @@ def get_system_message_for_initial_convo():
     Generates a base message array which contains the system prompt for the goal
     creation conversation
     """
-    return {"role": "system", "content": INITIAL_CONVO_SYSTEM_PROMPT}
+    return generate_chat_gpt_standard_message(
+        CHATGPT_SYSTEM_ROLE, INITIAL_CONVO_SYSTEM_PROMPT
+    )
 
 
 def get_system_message_standard():
@@ -125,4 +189,6 @@ def get_system_message_standard():
     Generates a base message array which contains the system prompt for all
     behavior outside of the goal creation conversation.
     """
-    return {"role": "system", "content": STANDARD_SYSTEM_PROMPT}
+    return generate_chat_gpt_standard_message(
+        CHATGPT_SYSTEM_ROLE, STANDARD_SYSTEM_PROMPT
+    )
