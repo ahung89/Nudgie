@@ -175,6 +175,20 @@ def generate_and_send_nudge(user: User) -> None:
     generate_and_send_reminder_or_nudge(user, NUDGE_PROMPT, True)
 
 
+def prepare_api_message(messages: list, has_nudgie_tasks: bool) -> list:
+    """
+    Prepares the messages to send to the OpenAI API.
+    """
+    api_messages = [
+        get_system_message_standard()
+        if has_nudgie_tasks
+        else get_system_message_for_initial_convo()
+    ]
+    api_messages.extend(messages)
+
+    return api_messages
+
+
 def handle_convo(prompt, messages, user, has_nudgie_tasks) -> str:
     """
     Calls OpenAI with the user's input and responds accordingly based on the AI's
@@ -185,12 +199,7 @@ def handle_convo(prompt, messages, user, has_nudgie_tasks) -> str:
     generate_chat_gpt_standard_message(
         CHATGPT_USER_ROLE, prompt, user, DIALOGUE_TYPE_USER_INPUT, True, messages
     )
-    api_messages = [
-        get_system_message_standard()
-        if has_nudgie_tasks
-        else get_system_message_for_initial_convo()
-    ]
-    api_messages.extend(messages)
+    api_messages = prepare_api_message(messages, has_nudgie_tasks)
 
     response = call_openai_api(
         api_messages,
