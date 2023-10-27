@@ -29,8 +29,12 @@ from Nudgie.constants import (
     CHATGPT_REGISTER_NOTIFICATIONS_FUNCTION,
     DIALOGUE_TYPE_REMINDER,
     DIALOGUE_TYPE_USER_INPUT,
-    DIALOGUE_INTERNAL_MESSAGE,
+    DIALOGUE_TYPE_SYSTEM_MESSAGE,
     DIALOGUE_TYPE_NUDGE,
+    DIALOGUE_TYPE_AI_STANDARD,
+    OPENAI_MODEL_FIELD,
+    OPENAI_MESSAGE_FIELD,
+    OPENAI_FUNCTIONS_FIELD,
 )
 
 
@@ -80,7 +84,7 @@ def generate_chatgpt_function_success_message(
     message = generate_chat_gpt_standard_message(
         CHATGPT_FUNCTION_ROLE,
         CHATGPT_DEFAULT_FUNCTION_SUCCESS_MESSAGE,
-        DIALOGUE_INTERNAL_MESSAGE,
+        DIALOGUE_TYPE_SYSTEM_MESSAGE,
         save_conversation,
         False,
     )
@@ -99,7 +103,7 @@ def handle_chatgpt_function_call(function_name: str, function_args: dict, user):
     """
     if function_name == CHATGPT_REGISTER_NOTIFICATIONS_FUNCTION:
         schedule_tasks_from_crontab_list(
-            json.loads(function_args[CHATGPT_SCHEDULES_KEY]),
+            function_args[CHATGPT_SCHEDULES_KEY],
             user,
         )
     else:
@@ -112,9 +116,11 @@ def call_openai_api(messages: list[str], functions: Optional[list] = None):
     """
     Calls the OpenAI API and returns the response.
     """
-    response = openai.ChatCompletion.create(
-        model=CHAT_GPT_MODEL, messages=messages, functions=functions
-    )
+    args = {OPENAI_MODEL_FIELD: CHAT_GPT_MODEL, OPENAI_MESSAGE_FIELD: messages}
+    if functions is not None:
+        args[OPENAI_FUNCTIONS_FIELD] = functions
+
+    response = openai.ChatCompletion.create(**args)
     return response.choices[0].message
 
 
@@ -138,7 +144,7 @@ def generate_and_send_reminder_or_nudge(
         CHATGPT_USER_ROLE,
         message,
         user,
-        DIALOGUE_INTERNAL_MESSAGE,
+        DIALOGUE_TYPE_SYSTEM_MESSAGE,
         True,
         messages,
     )
@@ -194,7 +200,7 @@ def handle_convo(prompt, messages, user, has_nudgie_tasks) -> str:
     # Handle function call, if necessary
     if has_function_call(response):
         handle_chatgpt_function_call(
-            response.function_call.function,
+            response.function_call.name,
             json.loads(response.function_call.arguments),
             user,
         )
@@ -207,7 +213,12 @@ def handle_convo(prompt, messages, user, has_nudgie_tasks) -> str:
     # Generate final response to the user
     response_text = response.content
     generate_chat_gpt_standard_message(
-        CHATGPT_ASSISTANT_ROLE, response_text, user, None, True, messages
+        CHATGPT_ASSISTANT_ROLE,
+        response_text,
+        user,
+        DIALOGUE_TYPE_AI_STANDARD,
+        True,
+        messages,
     )
 
     return response_text
@@ -219,7 +230,11 @@ def get_system_message_for_initial_convo():
     creation conversation
     """
     return generate_chat_gpt_standard_message(
-        CHATGPT_SYSTEM_ROLE, INITIAL_CONVO_SYSTEM_PROMPT
+        CHATGPT_SYSTEM_ROLE,
+        INITIAL_CONVO_SYSTEM_PROMPT,
+        None,
+        DIALOGUE_TYPE_SYSTEM_MESSAGE,
+        False,
     )
 
 
@@ -229,5 +244,9 @@ def get_system_message_standard():
     behavior outside of the goal creation conversation.
     """
     return generate_chat_gpt_standard_message(
-        CHATGPT_SYSTEM_ROLE, STANDARD_SYSTEM_PROMPT
+        CHATGPT_SYSTEM_ROLE,
+        STANDARD_SYSTEM_PROMPT,
+        None,
+        DIALOGUE_TYPE_SYSTEM_MESSAGE,
+        False,
     )

@@ -3,7 +3,8 @@ QUEUE_NAME = "nudgie"
 DIALOGUE_TYPE_REMINDER = "reminder"
 DIALOGUE_TYPE_NUDGE = "nudge"
 DIALOGUE_TYPE_USER_INPUT = "user_input"
-DIALOGUE_INTERNAL_MESSAGE = "internal_message"
+DIALOGUE_TYPE_SYSTEM_MESSAGE = "system_message"
+DIALOGUE_TYPE_AI_STANDARD = "ai_standard"
 
 NUDGE_HANDLER = "Nudgie.tasks.handle_nudge"
 REMINDER_HANDLER = "Nudgie.tasks.handle_reminder"
@@ -32,3 +33,7 @@ CHATGPT_FUNCTION_ROLE = "function"
 
 CHATGPT_DEFAULT_FUNCTION_SUCCESS_MESSAGE = "Success."
 CHATGPT_REGISTER_NOTIFICATIONS_FUNCTION = "register_notifications"
+
+OPENAI_MODEL_FIELD = "model"
+OPENAI_MESSAGE_FIELD = "messages"
+OPENAI_FUNCTIONS_FIELD = "functions"
