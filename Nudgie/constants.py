@@ -2,6 +2,7 @@ QUEUE_NAME = "nudgie"
 
 DIALOGUE_TYPE_REMINDER = "reminder"
 DIALOGUE_TYPE_NUDGE = "nudge"
+DIALOGUE_TYPE_USER_INPUT = "user_input"
 
 NUDGE_HANDLER = "Nudgie.tasks.handle_nudge"
 REMINDER_HANDLER = "Nudgie.tasks.handle_reminder"

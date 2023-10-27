@@ -1,5 +1,7 @@
 import openai
 import json
+from django.contrib.auth.models import User
+from typing import Optional
 from Nudgie.models import Conversation
 from Nudgie.chat.dialogue import load_conversation
 from Nudgie.scheduling.scheduler import schedule_tasks_from_crontab_list
@@ -24,6 +26,8 @@ from Nudgie.constants import (
     CHATGPT_FUNCTION_ROLE,
     CHATGPT_DEFAULT_FUNCTION_SUCCESS_MESSAGE,
     CHATGPT_REGISTER_NOTIFICATIONS_FUNCTION,
+    DIALOGUE_TYPE_REMINDER,
+    DIALOGUE_TYPE_USER_INPUT,
 )
 
 
@@ -34,10 +38,21 @@ def has_function_call(response) -> bool:
     return CHATGPT_FUNCTION_CALL_KEY in response
 
 
-def generate_chat_gpt_standard_message(role: str, content: str) -> dict:
+def generate_chat_gpt_standard_message(
+    role: str,
+    content: str,
+    user: Optional[User],
+    dialogue_type: Optional[str],
+    save_conversation: bool = True,
+) -> dict:
     """
     Generates a message for the ChatGPT API.
     """
+    if save_conversation:
+        message = Conversation(
+            user=user, message_type=role, dialogue_type=dialogue_type, content=content
+        )
+        message.save()
     return {
         CHATGPT_ROLE_KEY: role,
         CHATGPT_CONTENT_KEY: content,
@@ -87,30 +102,17 @@ def trigger_reminder(user, task_data):
         reminder_notes=task_data.reminder_notes,
         due_date=task_data.due_date,
     )
-    print(f"REMINDER-TRIGGERING MESSAGE: {message_content}")
-    messages = load_conversation(user) + [{"role": "user", "content": message_content}]
+    messages = load_conversation(user) + generate_chat_gpt_standard_message(
+        CHATGPT_USER_ROLE, message_content, user, DIALOGUE_TYPE_USER_INPUT, True
+    )
     api_messages = [get_system_message_standard(), *messages]
-    print(f"API MESSAGES: {api_messages}")
 
-    response = call_openai_api(api_messages, ONGOING_CONVO_FUNCTIONS)
-    response_text = response.content
-    messages.append({"role": "assistant", "content": response_text})
-
-    system_prompt = Conversation(
-        user=user, message_type="user", content=message_content
+    response_text = call_openai_api(api_messages, ONGOING_CONVO_FUNCTIONS).content
+    messages.append(
+        generate_chat_gpt_standard_message(
+            CHATGPT_ASSISTANT_ROLE, response_text, user, DIALOGUE_TYPE_REMINDER, True
+        )
     )
-    system_prompt.save()  # just for debugging
-
-    reminder_text = Conversation(
-        user=user,
-        message_type="assistant",
-        content=response_text,
-        dialogue_type="reminder",
-    )
-    reminder_text.save()
-
-    print(f"MESSAGES: {messages}")
-    print("RESPONSE TEXT FOR GENERATED REMINDER: ", response_text)
 
 
 def trigger_nudge(user):
