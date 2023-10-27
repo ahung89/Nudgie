@@ -4,7 +4,7 @@ from celery import shared_task
 from Nudgie.scheduling.scheduler import (
     schedule_nudge,
 )
-from Nudgie.chat.chatgpt import trigger_nudge, trigger_reminder
+from Nudgie.chat.chatgpt import generate_and_send_nudge, generate_and_send_reminder
 from Nudgie.time_utils.time import (
     get_time,
     calculate_due_date_from_crontab,
@@ -34,7 +34,6 @@ from datetime import timedelta, datetime
 # TODO: move this to a helper file
 def look_up_nudgie_task(task_name, user_id):
     filtered_tasks = NudgieTask.objects.filter(task_name=task_name, user_id=user_id)
-    user = User.objects.get(id=user_id)
 
     assert len(filtered_tasks) == 1, f"expected 1 task, got {len(filtered_tasks)}"
 
@@ -64,7 +63,7 @@ def handle_nudge(task_name, due_date, user_id):
     if not filtered_tasks[0].completed:
         print("task incomplete, sending nudge")
         # reminder message comes from the PeriodicTask kwargs. it's associated with the nudge.
-        trigger_nudge(user)
+        generate_and_send_nudge(user)
         # TODO: deactivate nudge
 
 
@@ -108,7 +107,7 @@ def handle_reminder(periodic_task_id):
     # retrieve task data to use for triggering reminder (and for updating the due date)
     if not nudgie_task.completed:
         print("task incomplete, sending reminder")
-        trigger_reminder(user, task_data)
+        generate_and_send_reminder(user, task_data)
         generate_nudges(user, task_data)
 
     # calculate the next due-date and save it to the PeriodicTask

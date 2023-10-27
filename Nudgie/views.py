@@ -112,22 +112,11 @@ def chatbot_api(request):
         data = json.loads(request.body.decode("utf-8"))
         user_input = data.get("message")
 
-        print(f"RECEIVED INPUT. User input: {user_input}")
-        convo = load_conversation(request.user)
-
         # determine which flow to use
         has_nudgie_tasks = NudgieTask.objects.filter(user=request.user).exists()
-        bot_response = handle_convo(user_input, convo, request.user, has_nudgie_tasks)
-
-        user_convo_entry = Conversation(
-            user=request.user, message_type="user", content=user_input
+        bot_response = handle_convo(
+            user_input, load_conversation(request.user), request.user, has_nudgie_tasks
         )
-        ai_convo_entry = Conversation(
-            user=request.user, message_type="assistant", content=bot_response
-        )
-
-        user_convo_entry.save()
-        ai_convo_entry.save()
 
         return JsonResponse({"sender": "assistant", "message": bot_response})
 
