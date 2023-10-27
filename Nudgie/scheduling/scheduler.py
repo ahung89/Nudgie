@@ -1,16 +1,16 @@
 from django_celery_beat.models import PeriodicTask
 from datetime import datetime
 from Nudgie.models import NudgieTask
-from Nudgie.util.constants import (
+from Nudgie.constants import (
     NUDGE_HANDLER,
     REMINDER_HANDLER,
 )
-from Nudgie.util.constants import (
+from Nudgie.constants import (
     QUEUE_NAME,
     DIALOGUE_TYPE_NUDGE,
     DIALOGUE_TYPE_REMINDER,
 )
-from Nudgie.util.periodic_task_helper import (
+from Nudgie.scheduling.periodic_task_helper import (
     TaskData,
     convert_chatgpt_task_data_to_task_data,
 )

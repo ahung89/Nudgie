@@ -1,8 +1,8 @@
 import openai
 import json
 from Nudgie.models import Conversation
-from Nudgie.util.dialogue import load_conversation
-from Nudgie.util.reminder_scheduler import schedule_tasks_from_crontab_list
+from Nudgie.chat.dialogue import load_conversation
+from Nudgie.scheduling.scheduler import schedule_tasks_from_crontab_list
 from Nudgie.config.chatgpt_inputs import (
     INITIAL_CONVO_FUNCTIONS,
     INITIAL_CONVO_SYSTEM_PROMPT,

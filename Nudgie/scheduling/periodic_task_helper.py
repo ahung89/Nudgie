@@ -3,11 +3,11 @@ from django.contrib.auth.models import User
 from django_celery_beat.models import PeriodicTask
 from typing import NamedTuple, Optional, Any
 from django_celery_beat.models import CrontabSchedule
-from Nudgie.util.time import (
+from Nudgie.time_utils.time import (
     calculate_due_date_from_crontab,
     get_next_run_time_from_crontab,
 )
-from Nudgie.util.constants import (
+from Nudgie.constants import (
     REMINDER_DATA_AI_STRUCT_KEY,
     TASK_NAME_AI_STRUCT_KEY,
     GOAL_NAME_AI_STRUCT_KEY,

@@ -1,22 +1,22 @@
 import json
 from celery import shared_task
 
-from Nudgie.util.reminder_scheduler import (
+from Nudgie.scheduling.scheduler import (
     schedule_nudge,
 )
-from Nudgie.integrations.chatgpt import trigger_nudge, trigger_reminder
-from Nudgie.util.time import (
+from Nudgie.chat.chatgpt import trigger_nudge, trigger_reminder
+from Nudgie.time_utils.time import (
     get_time,
     calculate_due_date_from_crontab,
     get_next_run_time_from_crontab,
 )
 from .models import NudgieTask
-from .util.periodic_task_helper import (
+from .scheduling.periodic_task_helper import (
     get_periodic_task_data,
     modify_periodic_task,
     TaskData,
 )
-from .util.constants import (
+from .constants import (
     MAX_NUDGES_PER_REMINDER,
     MIN_MINUTES_BETWEEN_NUDGES,
     MIN_TIME_BETWEEN_LAST_NUDGE_AND_DUE_DATE,

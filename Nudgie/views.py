@@ -6,13 +6,13 @@ from django.shortcuts import render
 from django_celery_beat.models import PeriodicTask, CrontabSchedule
 from django.contrib.auth.models import User
 
-from Nudgie.util.time import get_time, set_time, get_next_run_time_from_crontab
+from Nudgie.time_utils.time import get_time, set_time, get_next_run_time_from_crontab
 from .tasks import handle_nudge, handle_reminder
-from .integrations.chatgpt import handle_convo
+from .chat.chatgpt import handle_convo
 from .models import Conversation, MockedTime, NudgieTask
-from .util.constants import DIALOGUE_TYPE_REMINDER, QUEUE_NAME
-from Nudgie.util.dialogue import load_conversation
-from Nudgie.util.periodic_task_helper import get_periodic_task_data
+from .constants import DIALOGUE_TYPE_REMINDER, QUEUE_NAME
+from Nudgie.chat.dialogue import load_conversation
+from Nudgie.scheduling.periodic_task_helper import get_periodic_task_data
 
 # how many seconds to fast forward by when triggering a reminder for testing
 TEST_FAST_FORWARD_SECONDS = 5
