@@ -2,7 +2,7 @@ import openai
 import json
 from django.contrib.auth.models import User
 from typing import Optional
-from Nudgie.models import Conversation
+from Nudgie.models import Conversation, NudgieTask
 from Nudgie.chat.dialogue import load_conversation
 from Nudgie.scheduling.scheduler import schedule_tasks_from_crontab_list
 from Nudgie.scheduling.periodic_task_helper import TaskData
@@ -14,6 +14,8 @@ from Nudgie.config.chatgpt_inputs import (
     STANDARD_SYSTEM_PROMPT,
     ONGOING_CONVO_FUNCTIONS,
     CHAT_GPT_MODEL,
+    TASK_IDENTIFICATION_PROMPT,
+    PENDING_TASKS,
 )
 from Nudgie.constants import (
     CHATGPT_FUNCTION_CALL_KEY,
@@ -45,7 +47,7 @@ def has_function_call(response) -> bool:
     return CHATGPT_FUNCTION_CALL_KEY in response
 
 
-def generate_chat_gpt_standard_message(
+def generate_chat_gpt_message(
     role: str,
     content: str,
     user: Optional[User],
@@ -81,7 +83,7 @@ def generate_chatgpt_function_success_message(
     """
     Generates a success message for a function call.
     """
-    message = generate_chat_gpt_standard_message(
+    message = generate_chat_gpt_message(
         CHATGPT_FUNCTION_ROLE,
         CHATGPT_DEFAULT_FUNCTION_SUCCESS_MESSAGE,
         DIALOGUE_TYPE_SYSTEM_MESSAGE,
@@ -140,7 +142,7 @@ def generate_and_send_reminder_or_nudge(
     Prompts ChatGPT to generate a reminder or a nudge, then sends it to the user.
     """
     messages = load_conversation(user)
-    generate_chat_gpt_standard_message(
+    generate_chat_gpt_message(
         CHATGPT_USER_ROLE,
         message,
         user,
@@ -151,7 +153,7 @@ def generate_and_send_reminder_or_nudge(
 
     # Generate, package, and send the response.
     response_text = call_openai_api([get_system_message_standard(), *messages]).content
-    generate_chat_gpt_standard_message(
+    generate_chat_gpt_message(
         CHATGPT_ASSISTANT_ROLE,
         response_text,
         user,
@@ -196,7 +198,7 @@ def handle_convo(prompt, messages, user, has_nudgie_tasks) -> str:
     """
 
     # Generate message and prepare API call
-    generate_chat_gpt_standard_message(
+    generate_chat_gpt_message(
         CHATGPT_USER_ROLE, prompt, user, DIALOGUE_TYPE_USER_INPUT, True, messages
     )
     api_messages = prepare_api_message(messages, has_nudgie_tasks)
@@ -221,7 +223,7 @@ def handle_convo(prompt, messages, user, has_nudgie_tasks) -> str:
 
     # Generate final response to the user
     response_text = response.content
-    generate_chat_gpt_standard_message(
+    generate_chat_gpt_message(
         CHATGPT_ASSISTANT_ROLE,
         response_text,
         user,
@@ -238,7 +240,7 @@ def get_system_message_for_initial_convo():
     Generates a base message array which contains the system prompt for the goal
     creation conversation
     """
-    return generate_chat_gpt_standard_message(
+    return generate_chat_gpt_message(
         CHATGPT_SYSTEM_ROLE,
         INITIAL_CONVO_SYSTEM_PROMPT,
         None,
@@ -252,10 +254,23 @@ def get_system_message_standard():
     Generates a base message array which contains the system prompt for all
     behavior outside of the goal creation conversation.
     """
-    return generate_chat_gpt_standard_message(
+    return generate_chat_gpt_message(
         CHATGPT_SYSTEM_ROLE,
         STANDARD_SYSTEM_PROMPT,
         None,
         DIALOGUE_TYPE_SYSTEM_MESSAGE,
         False,
+    )
+
+
+def get_task_identification_message(nudgie_tasks: list[NudgieTask], user: User):
+    """
+    Generates a message to prompt the AI to perform a task identification task.
+    """
+    return generate_chat_gpt_message(
+        CHATGPT_USER_ROLE,
+        TASK_IDENTIFICATION_PROMPT.format(PENDING_TASKS, nudgie_tasks),
+        None,
+        DIALOGUE_TYPE_SYSTEM_MESSAGE,
+        True,
     )

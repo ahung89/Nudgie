@@ -226,3 +226,13 @@ last reminded to do. Basically just gently 'nudge' him reminding him to do the t
 Try to vary it up and keep the tone casual but encouraging. After the nudge, write a short explanation of why you crafted
 the nudge the way you did, and clearly delineate the explanation.
 """
+
+TASK_IDENTIFICATION_PROMPT = """[TASK IDENTIFICATION] You are to guess which of the pending tasks (provided below and labeled
+**PENDING TASKS**) the user is referring to in his most recent message. You are to make this decision using both the context
+and the content of the message. Context = conversational history. E.g. if you just nudged the user to do his workout and he replies
+with 'done', you can be pretty sure he's referring to the workout task. Content = the actual text of the message. E.g. if the user
+makes any mention of the time/date/task name, etc, this can help you narrow it down. You are to respond in JSON format with the following
+fields: 'certainty_score' (a score from 0-1 of how certain you are that you have correctly identified the task, provided as a float value),
+'nudgie_task_id', which is the int id of the identified nudge, and 'reasoning', which is a string explaining your score and your selection.
+You are only to reply with the JSON object and no additional text - your reply will be parsed by the program and will
+not be displayed to the user. Here is the list of pending tasks which you are to use for your task identification: {PENDING_TASKS}"""
