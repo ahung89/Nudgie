@@ -37,3 +37,6 @@ CHATGPT_REGISTER_NOTIFICATIONS_FUNCTION = "register_notifications"
 OPENAI_MODEL_FIELD = "model"
 OPENAI_MESSAGE_FIELD = "messages"
 OPENAI_FUNCTIONS_FIELD = "functions"
+
+# how many seconds to fast forward by when triggering a reminder for testing
+TEST_FAST_FORWARD_SECONDS = 5

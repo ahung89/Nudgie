@@ -1,4 +1,3 @@
-import json
 from celery import shared_task
 
 from Nudgie.scheduling.scheduler import (
@@ -97,16 +96,15 @@ def handle_due_date_update(
     NudgieTask for the next due date.
     """
     new_due_date = calculate_due_date_from_crontab(task_data.crontab, user)
-
-    print(f"NEW DUE DATE: {new_due_date}")
-    modify_periodic_task(
-        periodic_task_id,
+    task_data = task_data._replace(
         due_date=new_due_date.isoformat(),
         next_run_time=get_next_run_time_from_crontab(
             task_data.crontab,
             user,
         ).isoformat(),
     )
+
+    modify_periodic_task(periodic_task_id, task_data)
 
     NudgieTask.objects.create(
         user=user,

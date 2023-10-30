@@ -10,12 +10,9 @@ from Nudgie.time_utils.time import get_time, set_time, get_next_run_time_from_cr
 from .tasks import handle_nudge, handle_reminder
 from .chat.chatgpt import handle_convo
 from .models import Conversation, MockedTime, NudgieTask
-from .constants import DIALOGUE_TYPE_REMINDER, QUEUE_NAME
+from .constants import DIALOGUE_TYPE_REMINDER, QUEUE_NAME, TEST_FAST_FORWARD_SECONDS
 from Nudgie.chat.dialogue import load_conversation
 from Nudgie.scheduling.periodic_task_helper import get_periodic_task_data
-
-# how many seconds to fast forward by when triggering a reminder for testing
-TEST_FAST_FORWARD_SECONDS = 5
 
 
 def get_task_list_with_next_run(user: User):
@@ -67,6 +64,9 @@ def get_task_list_display(request):
 
 
 def fast_forward(target_time: datetime, user: User):
+    """
+    Fast forward the system time to the target time. This is for testing purposes only.
+    """
     target_time += timedelta(seconds=TEST_FAST_FORWARD_SECONDS)
     print(f"FAST FORWARDING TO {target_time=}. {get_time(user)=}")
     set_time(user, target_time)

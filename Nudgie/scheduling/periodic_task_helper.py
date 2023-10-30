@@ -1,4 +1,5 @@
 import json
+from dataclasses import asdict
 from django.contrib.auth.models import User
 from django_celery_beat.models import PeriodicTask
 from typing import NamedTuple, Optional, Any
@@ -28,64 +29,29 @@ class TaskData(NamedTuple):
     next_run_time: Optional[str] = None  # only for testing tool, get rid of later
 
     def get_as_kwargs(self):
-        return json.dumps(
-            {
-                "task_name": self.task_name,
-                "goal_name": self.goal_name,
-                "due_date": self.due_date,
-                "user_id": self.user_id,
-                "dialogue_type": self.dialogue_type,
-                "reminder_notes": self.reminder_notes,
-                "next_run_time": self.next_run_time,
-            }
-        )
+        return json.dumps({k: v for k, v in self._asdict().items() if k != "crontab"})
 
 
-def modify_periodic_task(
-    id: int,
-    crontab: Optional[CrontabSchedule] = None,
-    task_name: Optional[str] = None,
-    goal_name: Optional[str] = None,
-    user_id: Optional[int] = None,
-    due_date: Optional[str] = None,
-    dialogue_type: Optional[str] = None,
-    next_run_time: Optional[str] = None,
-    reminder_notes: Optional[str] = None,
-):
+def modify_periodic_task(id: int, task_data: Optional[TaskData] = None):
     task = PeriodicTask.objects.get(id=id)
     current_kwargs = json.loads(task.kwargs)
 
-    for key in [
-        "crontab",
-        "task_name",
-        "goal_name",
-        "user_id",
-        "due_date",
-        "dialogue_type",
-        "next_run_time",
-        "reminder_notes",
-    ]:
-        value = locals()[key]
-        if value is not None:
-            current_kwargs[key] = value
+    if task_data:
+        task_data_dict = asdict(task_data)
 
-    task.kwargs = json.dumps(current_kwargs)
-    task.save()
+        for key, value in task_data_dict.items():
+            if value is not None:
+                current_kwargs[key] = value
+
+        task.kwargs = json.dumps(current_kwargs)
+        task.save()
 
 
 def get_periodic_task_data(id):
     task = PeriodicTask.objects.get(id=id)
     kwargs = json.loads(task.kwargs)
 
-    return TaskData(
-        crontab=task.crontab,
-        task_name=kwargs["task_name"],
-        goal_name=kwargs["goal_name"],
-        user_id=kwargs["user_id"],
-        due_date=kwargs["due_date"],
-        dialogue_type=kwargs.get("dialogue_type"),
-        reminder_notes=kwargs.get("reminder_notes"),
-    )
+    return TaskData(crontab=task.crontab, **kwargs)
 
 
 def convert_chatgpt_task_data_to_task_data(
