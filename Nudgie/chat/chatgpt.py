@@ -15,7 +15,6 @@ from Nudgie.config.chatgpt_inputs import (
     ONGOING_CONVO_FUNCTIONS,
     CHAT_GPT_MODEL,
     TASK_IDENTIFICATION_PROMPT,
-    PENDING_TASKS,
 )
 from Nudgie.constants import (
     CHATGPT_FUNCTION_CALL_KEY,
@@ -37,6 +36,7 @@ from Nudgie.constants import (
     OPENAI_MODEL_FIELD,
     OPENAI_MESSAGE_FIELD,
     OPENAI_FUNCTIONS_FIELD,
+    PENDING_TASKS_KEY,
 )
 
 
@@ -99,15 +99,22 @@ def generate_chatgpt_function_success_message(
     return message
 
 
-def handle_chatgpt_function_call(function_name: str, function_args: dict, user):
+def handle_chatgpt_function_call(
+    function_name: str, function_args: dict, user: User, messages: list
+):
     """
-    Handles a function call from the OpenAI API.
+    Handles a function call from the OpenAI API, returns the response.
     """
     if function_name == CHATGPT_REGISTER_NOTIFICATIONS_FUNCTION:
         schedule_tasks_from_crontab_list(
             function_args[CHATGPT_SCHEDULES_KEY],
             user,
         )
+        generate_chatgpt_function_success_message(
+            CHATGPT_REGISTER_NOTIFICATIONS_FUNCTION, user, True, messages
+        )
+        # Generate a response to the user based on the function call.
+        return call_openai_api(messages, INITIAL_CONVO_FUNCTIONS)
     else:
         raise NotImplementedError(
             f"Function {function_name} is not implemented in ChatGPT."
@@ -210,16 +217,12 @@ def handle_convo(prompt, messages, user, has_nudgie_tasks) -> str:
 
     # Handle function call, if necessary
     if has_function_call(response):
-        handle_chatgpt_function_call(
+        response = handle_chatgpt_function_call(
             response.function_call.name,
             json.loads(response.function_call.arguments),
             user,
+            messages,
         )
-        generate_chatgpt_function_success_message(
-            CHATGPT_REGISTER_NOTIFICATIONS_FUNCTION, user, True, messages
-        )
-        # Generate a response to the user based on the function call.
-        response = call_openai_api(messages, INITIAL_CONVO_FUNCTIONS)
 
     # Generate final response to the user
     response_text = response.content
@@ -269,7 +272,7 @@ def get_task_identification_message(nudgie_tasks: list[NudgieTask], user: User):
     """
     return generate_chat_gpt_message(
         CHATGPT_USER_ROLE,
-        TASK_IDENTIFICATION_PROMPT.format(PENDING_TASKS, nudgie_tasks),
+        TASK_IDENTIFICATION_PROMPT.format(PENDING_TASKS_KEY, nudgie_tasks),
         None,
         DIALOGUE_TYPE_SYSTEM_MESSAGE,
         True,
