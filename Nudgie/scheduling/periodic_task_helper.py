@@ -1,5 +1,4 @@
 import json
-from dataclasses import asdict
 from django.contrib.auth.models import User
 from django_celery_beat.models import PeriodicTask
 from typing import NamedTuple, Optional, Any
@@ -15,6 +14,7 @@ from Nudgie.constants import (
     REMINDER_NOTES_AI_STRUCT_KEY,
     CRONTAB_AI_STRUCT_KEY,
     DIALOGUE_TYPE_REMINDER,
+    PERIODIC_TASK_CRONTAB_FIELD,
 )
 
 
@@ -29,7 +29,13 @@ class TaskData(NamedTuple):
     next_run_time: Optional[str] = None  # only for testing tool, get rid of later
 
     def get_as_kwargs(self):
-        return json.dumps({k: v for k, v in self._asdict().items() if k != "crontab"})
+        return json.dumps(
+            {
+                k: v
+                for k, v in self._asdict().items()
+                if k != PERIODIC_TASK_CRONTAB_FIELD
+            }
+        )
 
 
 def modify_periodic_task(id: int, task_data: Optional[TaskData] = None):
@@ -37,11 +43,14 @@ def modify_periodic_task(id: int, task_data: Optional[TaskData] = None):
     current_kwargs = json.loads(task.kwargs)
 
     if task_data:
-        task_data_dict = asdict(task_data)
+        task_data_dict = task_data._asdict()
 
         for key, value in task_data_dict.items():
             if value is not None:
-                current_kwargs[key] = value
+                if key is PERIODIC_TASK_CRONTAB_FIELD:
+                    task.crontab = value
+                else:
+                    current_kwargs[key] = value
 
         task.kwargs = json.dumps(current_kwargs)
         task.save()

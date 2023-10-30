@@ -38,5 +38,36 @@ OPENAI_MODEL_FIELD = "model"
 OPENAI_MESSAGE_FIELD = "messages"
 OPENAI_FUNCTIONS_FIELD = "functions"
 
+CRONTAB_FIELDS = ["minute", "hour", "day_of_week"]
+
 # how many seconds to fast forward by when triggering a reminder for testing
 TEST_FAST_FORWARD_SECONDS = 5
+
+# Some of the periodic task fields (the ones which I need constants for right now)
+PERIODIC_TASK_NEXT_RUNTIME_FIELD = "next_run_time"
+PERIODIC_TASK_ID_FIELD = "periodic_task_id"
+PERIODIC_TASK_USER_ID = "user_id"
+PERIODIC_TASK_CRONTAB_FIELD = "crontab"
+
+# Constants for the testing tool
+CELERY_BACKEND_CLEANUP_TASK = "celery.backend_cleanup"
+
+CHATBOT_TEMPLATE_NAME = "chatbot.html"
+CHATBOT_CONVERSATION_FIELD = "conversation"
+CHATBOT_TEMPLATE_SERVER_TIME_FIELD = "server_time"
+CHATBOT_TEMPLATE_TASKS_FIELD = "tasks"
+CONVERSATION_FRAGMENT_TEMPLATE_NAME = "conversation_fragment.html"
+CONVERSATION_FRAGMENT_CONVERSATION_FIELD = "conversation"
+TASKLIST_FRAGMENT_TEMPLATE_NAME = "task_list_fragment.html"
+TASKLIST_FRAGMENT_TASKS_FIELD = "tasks"
+TASKLIST_FRAGMENT_SERVER_TIME_FIELD = "server_time"
+USER_INPUT_MESSAGE_FIELD = "message"
+SENDER_MESSAGE = "sender"
+SEND_TYPE_ASSISTANT = "assistant"
+MESSAGE_FIELD = "message"
+UTF_8 = "utf-8"
+
+TIMEZONE_UTC = "UTC"
+CHATBOT_URL_PATH = "/chatbot"
+
+POST = "POST"

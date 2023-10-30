@@ -1,6 +1,7 @@
 from croniter import croniter
 from datetime import datetime
 from django.contrib.auth.models import User
+from Nudgie.constants import TIMEZONE_UTC
 from Nudgie.models import MockedTime
 from django_celery_beat.models import CrontabSchedule
 import pytz
@@ -9,7 +10,7 @@ TESTING = True
 
 
 def localize(dt: datetime):
-    return pytz.timezone("UTC").localize(dt)
+    return pytz.timezone(TIMEZONE_UTC).localize(dt)
 
 
 def get_time(user: User) -> datetime:

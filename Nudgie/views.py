@@ -10,7 +10,31 @@ from Nudgie.time_utils.time import get_time, set_time, get_next_run_time_from_cr
 from .tasks import handle_nudge, handle_reminder
 from .chat.chatgpt import handle_convo
 from .models import Conversation, MockedTime, NudgieTask
-from .constants import DIALOGUE_TYPE_REMINDER, QUEUE_NAME, TEST_FAST_FORWARD_SECONDS
+from .constants import (
+    TEST_FAST_FORWARD_SECONDS,
+    CELERY_BACKEND_CLEANUP_TASK,
+    PERIODIC_TASK_NEXT_RUNTIME_FIELD,
+    CHATBOT_TEMPLATE_NAME,
+    CHATBOT_CONVERSATION_FIELD,
+    CHATBOT_TEMPLATE_SERVER_TIME_FIELD,
+    CHATBOT_TEMPLATE_TASKS_FIELD,
+    CONVERSATION_FRAGMENT_TEMPLATE_NAME,
+    CONVERSATION_FRAGMENT_CONVERSATION_FIELD,
+    TASKLIST_FRAGMENT_TEMPLATE_NAME,
+    TASKLIST_FRAGMENT_TASKS_FIELD,
+    TASKLIST_FRAGMENT_SERVER_TIME_FIELD,
+    MESSAGE_FIELD,
+    PERIODIC_TASK_USER_ID,
+    SENDER_MESSAGE,
+    CHATBOT_URL_PATH,
+    UTF_8,
+    DIALOGUE_TYPE_REMINDER,
+    QUEUE_NAME,
+    USER_INPUT_MESSAGE_FIELD,
+    SEND_TYPE_ASSISTANT,
+    POST,
+    PERIODIC_TASK_ID_FIELD,
+)
 from Nudgie.chat.dialogue import load_conversation
 from Nudgie.scheduling.periodic_task_helper import get_periodic_task_data
 
@@ -18,9 +42,9 @@ from Nudgie.scheduling.periodic_task_helper import get_periodic_task_data
 def get_task_list_with_next_run(user: User):
     """helper view for getting list of PeriodicTasks for the test tool"""
     tasks = sorted(
-        PeriodicTask.objects.exclude(task="celery.backend_cleanup"),
+        PeriodicTask.objects.exclude(task=CELERY_BACKEND_CLEANUP_TASK),
         key=lambda task: datetime.fromisoformat(
-            json.loads(task.kwargs)["next_run_time"]
+            json.loads(task.kwargs)[PERIODIC_TASK_NEXT_RUNTIME_FIELD]
         ),
     )
 
@@ -35,11 +59,11 @@ def chatbot_view(request):
 
     return render(
         request,
-        "chatbot.html",
+        CHATBOT_TEMPLATE_NAME,
         {
-            "conversation": convo,
-            "server_time": get_time(request.user).strftime("%Y-%m-%d %H:%M:%S"),
-            "tasks": tasks,
+            CHATBOT_CONVERSATION_FIELD: convo,
+            CHATBOT_TEMPLATE_SERVER_TIME_FIELD: get_time(request.user).isoformat(),
+            CHATBOT_TEMPLATE_TASKS_FIELD: tasks,
         },
     )
 
@@ -47,18 +71,18 @@ def chatbot_view(request):
 def get_conversation_display(request):
     return render(
         request,
-        "conversation_fragment.html",
-        {"conversation": load_conversation(request.user)},
+        CONVERSATION_FRAGMENT_TEMPLATE_NAME,
+        {CONVERSATION_FRAGMENT_CONVERSATION_FIELD: load_conversation(request.user)},
     )
 
 
 def get_task_list_display(request):
     return render(
         request,
-        "task_list_fragment.html",
+        TASKLIST_FRAGMENT_TEMPLATE_NAME,
         {
-            "tasks": get_task_list_with_next_run(request.user),
-            "server_time": get_time(request.user).strftime("%Y-%m-%d %H:%M:%S"),
+            TASKLIST_FRAGMENT_TASKS_FIELD: get_task_list_with_next_run(request.user),
+            TASKLIST_FRAGMENT_SERVER_TIME_FIELD: get_time(request.user).isoformat(),
         },
     )
 
@@ -76,7 +100,7 @@ def trigger_task(request: HttpRequest) -> HttpResponse:
     """
     This is the API for triggering a task. It is for testing purposes only.
     """
-    task_id = json.loads(request.body.decode("utf-8"))["periodic_task_id"]
+    task_id = json.loads(request.body.decode(UTF_8))[PERIODIC_TASK_ID_FIELD]
     task_data = get_periodic_task_data(task_id)
 
     crontab = task_data.crontab
@@ -108,9 +132,9 @@ def trigger_task(request: HttpRequest) -> HttpResponse:
 
 # for the initial conversation flow
 def chatbot_api(request):
-    if request.method == "POST":
-        data = json.loads(request.body.decode("utf-8"))
-        user_input = data.get("message")
+    if request.method == POST:
+        data = json.loads(request.body.decode(UTF_8))
+        user_input = data.get(USER_INPUT_MESSAGE_FIELD)
 
         # determine which flow to use
         has_nudgie_tasks = NudgieTask.objects.filter(user=request.user).exists()
@@ -118,7 +142,9 @@ def chatbot_api(request):
             user_input, load_conversation(request.user), request.user, has_nudgie_tasks
         )
 
-        return JsonResponse({"sender": "assistant", "message": bot_response})
+        return JsonResponse(
+            {SENDER_MESSAGE: SEND_TYPE_ASSISTANT, MESSAGE_FIELD: bot_response}
+        )
 
 
 def reset_user_data(request):
@@ -126,12 +152,12 @@ def reset_user_data(request):
     NudgieTask.objects.filter(user=request.user).delete()
     # PeriodicTask.objects.filter(name__startswith=f"{request.user.id}").delete()
     PeriodicTask.objects.filter(
-        kwargs__contains=f'"user_id": {request.user.id}'
+        kwargs__contains=f'"{PERIODIC_TASK_USER_ID}": {request.user.id}'
     ).delete()
     CrontabSchedule.objects.exclude(periodictask__isnull=False).delete()
     MockedTime.objects.filter(user=request.user).delete()
 
-    return HttpResponseRedirect("/chatbot")
+    return HttpResponseRedirect(CHATBOT_URL_PATH)
 
 
 # TODO: get rid of this soon, was just to test the celery beat integration.

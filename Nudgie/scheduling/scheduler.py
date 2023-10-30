@@ -4,8 +4,6 @@ from Nudgie.models import NudgieTask
 from Nudgie.constants import (
     NUDGE_HANDLER,
     REMINDER_HANDLER,
-)
-from Nudgie.constants import (
     QUEUE_NAME,
     DIALOGUE_TYPE_NUDGE,
     DIALOGUE_TYPE_REMINDER,
@@ -14,8 +12,6 @@ from Nudgie.scheduling.periodic_task_helper import (
     TaskData,
     convert_chatgpt_task_data_to_task_data,
 )
-
-CRONTAB_FIELDS = ["minute", "hour", "day_of_week"]
 
 
 def schedule_periodic_task(task_data: TaskData, celery_task: str):
