@@ -21,6 +21,7 @@ from .constants import (
     MIN_TIME_BETWEEN_LAST_NUDGE_AND_DUE_DATE,
 )
 from django.contrib.auth.models import User
+from django_celery_beat.models import PeriodicTask
 from datetime import timedelta, datetime
 
 
@@ -41,25 +42,46 @@ def get_nudgie_task(task_name: str, user_id: str, due_date: datetime) -> NudgieT
     return filtered_tasks[0]
 
 
+def deactivate_nudge(
+    task_name: str, user_id: int, due_date: datetime, periodic_task_id: int
+) -> None:
+    """Deactivates a nudge by setting its completed field to True. Also deactivates the
+    periodic task associated with the nudge (because it's set to one-off, this will happen automatically
+    in production, so the explicit deactivation is just for the test tool)"""
+    get_nudgie_task(task_name, user_id, due_date).delete()
+
+    PeriodicTask.objects.get(id=periodic_task_id).delete()
+
+
 # shared_task is different from app.task in that it doesn't require a celery app to be defined.
 # this is so that it can be used in other apps. The thing is, reusable apps cannot depend
 # on the project itself. So you can't import the celery app from the project.
 @shared_task
-def handle_nudge(task_name, due_date, user_id):
+def handle_nudge(periodic_task_id) -> None:
     """
     A nudge must know the due date, task name, and related notes/info. It must not
     fire off if the task has already been completed, or if the due date was missed.
     """
-    print(f"handling nudge for task {task_name} due on {due_date}")
+    task_data = get_periodic_task_data(periodic_task_id)
+    print(f"handling nudge for task {task_data.task_name} due on {task_data.due_date}")
 
-    nudgie_task = get_nudgie_task(task_name, user_id, due_date)
+    nudgie_task = get_nudgie_task(
+        task_data.task_name,
+        task_data.user_id,
+        datetime.fromisoformat(task_data.due_date),
+    )
 
     # only trigger the nudge if the task hasn't already been completed.
-    # TODO: also check if the due date has passed.
     if not nudgie_task.completed:
         print("task incomplete, sending nudge")
-        generate_and_send_nudge(User.objects.get(id=user_id))
-        # TODO: deactivate nudge
+        generate_and_send_nudge(User.objects.get(id=task_data.user_id))
+
+    deactivate_nudge(
+        task_data.task_name,
+        task_data.user_id,
+        datetime.fromisoformat(task_data.due_date),
+        periodic_task_id,
+    )
 
 
 def generate_nudges(user: User, task_data: TaskData) -> None:

@@ -52,6 +52,7 @@ def get_task_list_with_next_run(user: User):
 
 
 def chatbot_view(request):
+    """The main view for the chatbot - displays a chat window as well as some controls."""
     convo = load_conversation(request.user)
 
     # for testing tool
@@ -69,6 +70,7 @@ def chatbot_view(request):
 
 
 def get_conversation_display(request):
+    """Contents of the conversation window (shows all of the things that have been said so far)"""
     return render(
         request,
         CONVERSATION_FRAGMENT_TEMPLATE_NAME,
@@ -77,6 +79,7 @@ def get_conversation_display(request):
 
 
 def get_task_list_display(request):
+    """Retrieves task list for display in the sidebar"""
     return render(
         request,
         TASKLIST_FRAGMENT_TEMPLATE_NAME,
@@ -121,7 +124,7 @@ def trigger_task(request: HttpRequest) -> HttpResponse:
         ).get()
     else:
         result = handle_nudge.apply_async(
-            (task_data.task_name, task_data.due_date, request.user.id),
+            args=(task_id,),
             queue=QUEUE_NAME,
         ).get()
 
@@ -132,6 +135,7 @@ def trigger_task(request: HttpRequest) -> HttpResponse:
 
 # for the initial conversation flow
 def chatbot_api(request):
+    """Handles all of the chat messages sent by the user."""
     if request.method == POST:
         data = json.loads(request.body.decode(UTF_8))
         user_input = data.get(USER_INPUT_MESSAGE_FIELD)
@@ -148,6 +152,7 @@ def chatbot_api(request):
 
 
 def reset_user_data(request):
+    """Resets all of the user's data, including conversations, nudgie tasks, and periodic tasks. For easier testing."""
     Conversation.objects.filter(user=request.user).delete()
     NudgieTask.objects.filter(user=request.user).delete()
     # PeriodicTask.objects.filter(name__startswith=f"{request.user.id}").delete()
