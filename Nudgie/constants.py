@@ -35,7 +35,10 @@ CHATGPT_SYSTEM_ROLE = "system"
 CHATGPT_FUNCTION_ROLE = "function"
 
 CHATGPT_DEFAULT_FUNCTION_SUCCESS_MESSAGE = "Success."
+
+# Function names
 CHATGPT_REGISTER_NOTIFICATIONS_FUNCTION = "register_notifications"
+CHATGPT_COMPLETE_TASK_FUNCTION = "complete_task"
 
 OPENAI_MODEL_FIELD = "model"
 OPENAI_MESSAGE_FIELD = "messages"
@@ -72,5 +75,9 @@ UTF_8 = "utf-8"
 
 TIMEZONE_UTC = "UTC"
 CHATBOT_URL_PATH = "/chatbot"
+
+# Task Identification API Constants
+TASK_IDENTIFICATION_CERTAINTY_SCORE = "certainty_score"
+TASK_IDENTIFICATION_REASONING = "reasoning"
 
 POST = "POST"

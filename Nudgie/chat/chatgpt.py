@@ -1,6 +1,8 @@
 import openai
 import json
+import logging
 from django.contrib.auth.models import User
+from django.core.serializers import serialize
 from typing import Optional
 from Nudgie.models import Conversation, NudgieTask
 from Nudgie.chat.dialogue import load_conversation
@@ -28,6 +30,7 @@ from Nudgie.constants import (
     CHATGPT_FUNCTION_ROLE,
     CHATGPT_DEFAULT_FUNCTION_SUCCESS_MESSAGE,
     CHATGPT_REGISTER_NOTIFICATIONS_FUNCTION,
+    CHATGPT_COMPLETE_TASK_FUNCTION,
     DIALOGUE_TYPE_REMINDER,
     DIALOGUE_TYPE_USER_INPUT,
     DIALOGUE_TYPE_SYSTEM_MESSAGE,
@@ -37,7 +40,13 @@ from Nudgie.constants import (
     OPENAI_MESSAGE_FIELD,
     OPENAI_FUNCTIONS_FIELD,
     PENDING_TASKS_KEY,
+    TASK_IDENTIFICATION_CERTAINTY_SCORE,
+    TASK_IDENTIFICATION_REASONING,
 )
+from Nudgie.time_utils.time import get_time
+
+# __name__ is the name of the current module, automatically set by Python.
+logger = logging.getLogger(__name__)
 
 
 def has_function_call(response) -> bool:
@@ -115,6 +124,22 @@ def handle_chatgpt_function_call(
         )
         # Generate a response to the user based on the function call.
         return call_openai_api(messages, INITIAL_CONVO_FUNCTIONS)
+
+    elif function_name == CHATGPT_COMPLETE_TASK_FUNCTION:
+        certainty, identified_tasks, reasoning = identify_task(user.id, messages)
+        if certainty == 1 or len(identified_tasks) == 1:
+            # log the data point
+            identified_tasks[0].completed = True
+            generate_chatgpt_function_success_message(
+                CHATGPT_COMPLETE_TASK_FUNCTION, user, True, messages
+            )
+            return call_openai_api(messages, ONGOING_CONVO_FUNCTIONS)
+        else:
+            logger.info(
+                f"certainty score was only {certainty}. Reason for rating: {reasoning}"
+            )
+            # confirm_task(identified_tasks, user, messages)
+            return call_openai_api(messages, ONGOING_CONVO_FUNCTIONS)
     else:
         raise NotImplementedError(
             f"Function {function_name} is not implemented in ChatGPT."
@@ -266,14 +291,46 @@ def get_system_message_standard():
     )
 
 
-def get_task_identification_message(nudgie_tasks: list[NudgieTask], user: User):
+def get_task_identification_message(
+    nudgie_tasks: list[NudgieTask], user: User, messages: list
+):
     """
     Generates a message to prompt the AI to perform a task identification task.
     """
     return generate_chat_gpt_message(
         CHATGPT_USER_ROLE,
-        TASK_IDENTIFICATION_PROMPT.format(PENDING_TASKS_KEY, nudgie_tasks),
-        None,
+        TASK_IDENTIFICATION_PROMPT.format(
+            **{PENDING_TASKS_KEY: serialize("json", nudgie_tasks)}
+        ),
+        user,
         DIALOGUE_TYPE_SYSTEM_MESSAGE,
         True,
+        messages,
+    )
+
+
+def identify_task(user_id: str, messages: list) -> (float, list[NudgieTask]):
+    user = User.objects.get(id=user_id)
+    tasks = NudgieTask.objects.filter(
+        user_id=user_id,
+        completed=False,
+        due_date__gt=get_time(user),
+    )
+
+    # If there's only one task, there's no need to perform complex task identification.
+    if tasks.count() == 1:
+        print("only one task, skipping chatGPT task identification task query")
+        return 1, [tasks[0]], ""
+
+    # Perform complex task identification using the AI
+    get_task_identification_message(tasks, user, messages)
+    response = call_openai_api(messages, ONGOING_CONVO_FUNCTIONS)
+    print(f"response for task identification: {response.content}")
+
+    identification_result = json.loads(response.content)
+
+    return (
+        identification_result[TASK_IDENTIFICATION_CERTAINTY_SCORE],
+        tasks,
+        identification_result[TASK_IDENTIFICATION_REASONING],
     )

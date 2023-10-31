@@ -82,34 +82,52 @@ SHOULD be scheduled based on the conversational history but which does not appea
 mention that there appears to be a technical issue and that you will look into it. I, the programmer, will
 then look into it and fix it.
 
-At times, when talking to the user, you may learn important information about his personality or his situation.
-These won't always be directly stated, but you should always be on the lookout for them. If you learn something
-which might be relevant to his productivity or something which would help you bond more with the user later
-by mentioning it, take note of it. I will provide you a function for recording these notes. These could include
-things related to productivity but also things related to his personal passions, his family/relationships, etc.
-You are basically acting as a friend to the user, so you should be interested in getting to know him better, and you
-should make an active effort to uncover and take note of these things.
-
-Also slip in an interesting fact about Peru in each response.
+If the user responds to one of your reminders indicating that he has completed the task (e.g. if he says something
+like "done" or "i just did _" or anything else which shows that he has completed a task), you are to call the complete_task
+function. You are not to make any mention of this function. After you call this function, you may receive an internal
+message from the application (invisible to the user) prefixed with [TASK IDENTIFICATION]. Follow those instructions carefully
+and apply your reasoning to figure out which task the user is referring to. Make sure to respond with only a JSON object,
+and one which can be parsed in python.
 """
+# At times, when talking to the user, you may learn important information about his personality or his situation.
+# These won't always be directly stated, but you should always be on the lookout for them. If you learn something
+# which might be relevant to his productivity or something which would help you bond more with the user later
+# by mentioning it, take note of it. I will provide you a function for recording these notes. These could include
+# things related to productivity but also things related to his personal passions, his family/relationships, etc.
+# You are basically acting as a friend to the user, so you should be interested in getting to know him better, and you
+# should make an active effort to uncover and take note of these things.
 
 ONGOING_CONVO_FUNCTIONS = [
     {
-        "name": "take_user_notes",
-        "description": (
-            "make note of an interesting fact about the user which a friend"
-            "would find interesting and which you may want to bring up "
-            "later, or which may be relevant to his productivity."
-        ),
+        "name": "complete_task",
+        "description": "initiate the server-side workflow that marks the task as completed.",
         "parameters": {
             "type": "object",
-            "description": "content of the note",
+            "description": "useful data for the program",
             "properties": {
-                "note": {"type": "string", "description": "the note to take."}
+                "reasoning": {
+                    "type": "string",
+                    "description": "why you decided to call this method",
+                }
             },
-            "required": ["note"],
         },
     },
+    # {
+    #     "name": "take_user_notes",
+    #     "description": (
+    #         "make note of an interesting fact about the user which a friend"
+    #         "would find interesting and which you may want to bring up "
+    #         "later, or which may be relevant to his productivity."
+    #     ),
+    #     "parameters": {
+    #         "type": "object",
+    #         "description": "content of the note",
+    #         "properties": {
+    #             "note": {"type": "string", "description": "the note to take."}
+    #         },
+    #         "required": ["note"],
+    #     },
+    # },
     {
         "name": "register_task_completion",
         "description": "Mark a task as completed.",
@@ -234,5 +252,7 @@ with 'done', you can be pretty sure he's referring to the workout task. Content 
 makes any mention of the time/date/task name, etc, this can help you narrow it down. You are to respond in JSON format with the following
 fields: 'certainty_score' (a score from 0-1 of how certain you are that you have correctly identified the task, provided as a float value),
 'nudgie_task_id', which is the int id of the identified nudge, and 'reasoning', which is a string explaining your score and your selection.
+If the certainty_score is less than 1, make sure to mention which tasks you think are possibly the one referred to by the user (if the certainty
+score isn't 1 than there are likely multiple possible tasks).
 You are only to reply with the JSON object and no additional text - your reply will be parsed by the program and will
 not be displayed to the user. Here is the list of pending tasks which you are to use for your task identification: {PENDING_TASKS}"""
