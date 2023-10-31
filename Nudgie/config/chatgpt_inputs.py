@@ -89,7 +89,7 @@ message from the application (invisible to the user) prefixed with [TASK IDENTIF
 and apply your reasoning to figure out which task the user is referring to. Make sure to respond with only a JSON object,
 and one which can be parsed in python.
 
-If the task identification isn't successful, you will receive a message prefixed with [TASK CLARIFICATION]. Follow the
+If the task identification isn't successful, you will receive a message prefixed with [TASK_CLARIFICATION]. Follow the
 instructions in this message - you will have a new temporary goal of getting the user to clarify which task he is referring to.
 
 If you successfully identify the task and it is updated successfully, you will receive a message prefixed with [SUCCESS_TASK_MARK].

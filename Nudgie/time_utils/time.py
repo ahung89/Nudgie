@@ -23,7 +23,6 @@ def get_time(user: User) -> datetime:
             # Time hasn't been mocked yet - returning actual time.
             return localize(datetime.now())
 
-        print(f"USING MOCKED TIME: {mocked_time_obj.mocked_time}")
         return mocked_time_obj.mocked_time
     else:
         return localize(datetime.now())

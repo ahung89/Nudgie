@@ -18,6 +18,7 @@ from Nudgie.config.chatgpt_inputs import (
     CHAT_GPT_MODEL,
     TASK_IDENTIFICATION_PROMPT,
     SUCCESSFUL_TASK_IDENTIFICATION_PROMPT,
+    CLARIFICATION_PROMPT,
 )
 from Nudgie.constants import (
     CHATGPT_FUNCTION_CALL_KEY,
@@ -139,8 +140,13 @@ def handle_chatgpt_function_call(
             )
             return call_openai_api(messages)
         else:
-            logger.info(
-                f"certainty score was only {certainty}. Reason for rating: {reasoning}"
+            generate_chat_gpt_message(
+                CHATGPT_USER_ROLE,
+                CLARIFICATION_PROMPT,
+                user,
+                DIALOGUE_TYPE_SYSTEM_MESSAGE,
+                True,
+                messages,
             )
             # confirm_task(identified_tasks, user, messages)
             return call_openai_api(messages, ONGOING_CONVO_FUNCTIONS)
