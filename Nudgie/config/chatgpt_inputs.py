@@ -89,6 +89,9 @@ message from the application (invisible to the user) prefixed with [TASK IDENTIF
 and apply your reasoning to figure out which task the user is referring to. Make sure to respond with only a JSON object,
 and one which can be parsed in python.
 
+If the task identification isn't successful, you will receive a message prefixed with [TASK CLARIFICATION]. Follow the
+instructions in this message - you will have a new temporary goal of getting the user to clarify which task he is referring to.
+
 If you successfully identify the task and it is updated successfully, you will receive a message prefixed with [SUCCESS_TASK_MARK].
 You are to follow the instructions in this message and craft the user response accordingly.
 """
@@ -264,3 +267,9 @@ SUCCESSFUL_TASK_IDENTIFICATION_PROMPT = """[SUCCESS_TASK_MARK] You have successf
 and have marked it as completed. You are to write a brief response to the user now, congratulating him on completing the task and having
 an encouraging tone. You can also mention something about how he's one step closer to his goal, or how he's making progress, etc. Make sure \
 to let him know that you successfully marked the task as completed."""
+
+CLARIFICATION_PROMPT = """[TASK_CLARIFICATION] You are to ask the user for clarification on which task he is referring to. You are to explain
+the reason for the ambiguity. Be persistent in asking for clarification, but don't be rude. In the beginning if the user gets distracted or
+changes the subject, politely guide it back to the task clarification. If the user continues to be unresponsive or makes it obvious in any way
+that he is intentionally trying to avoid clarifying, allow the subject change but mention that the task will not be marked as completed until he
+clarifies it adequately."""

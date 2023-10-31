@@ -4,8 +4,8 @@ import logging
 from django.contrib.auth.models import User
 from django.core.serializers import serialize
 from typing import Optional
-from Nudgie.models import Conversation, NudgieTask
-from Nudgie.chat.dialogue import load_conversation
+from Nudgie.models import NudgieTask
+from Nudgie.chat.dialogue import load_conversation, save_line_of_speech
 from Nudgie.scheduling.scheduler import schedule_tasks_from_crontab_list
 from Nudgie.scheduling.periodic_task_helper import TaskData
 from Nudgie.config.chatgpt_inputs import (
@@ -69,10 +69,7 @@ def generate_chat_gpt_message(
     Generates a message for the ChatGPT API.
     """
     if save_conversation:
-        message = Conversation(
-            user=user, message_type=role, dialogue_type=dialogue_type, content=content
-        )
-        message.save()
+        save_line_of_speech(user, role, dialogue_type, content)
     message = {
         CHATGPT_ROLE_KEY: role,
         CHATGPT_CONTENT_KEY: content,
@@ -131,10 +128,12 @@ def handle_chatgpt_function_call(
         if certainty == 1 or len(identified_tasks) == 1:
             # log the data point
             identified_tasks[0].completed = True
+            identified_tasks[0].save()
             generate_chat_gpt_message(
                 CHATGPT_USER_ROLE,
                 SUCCESSFUL_TASK_IDENTIFICATION_PROMPT,
                 user,
+                DIALOGUE_TYPE_SYSTEM_MESSAGE,
                 True,
                 messages,
             )
@@ -331,12 +330,15 @@ def identify_task(user_id: str, messages: list) -> (float, list[NudgieTask]):
     print(f"response for task identification: {response.content}")
 
     # Make the AI aware that it already executed the function call.
-    # messages.append(
-    #     {
-    #         CHATGPT_ROLE_KEY: CHATGPT_ASSISTANT_ROLE,
-    #         CHATGPT_CONTENT_KEY: response.content,
-    #     }
-    # )
+    save_line_of_speech(
+        user, CHATGPT_ASSISTANT_ROLE, DIALOGUE_TYPE_SYSTEM_MESSAGE, response.content
+    )
+    messages.append(
+        {
+            CHATGPT_ROLE_KEY: CHATGPT_ASSISTANT_ROLE,
+            CHATGPT_CONTENT_KEY: response.content,
+        }
+    )
 
     identification_result = json.loads(response.content)
 
