@@ -88,6 +88,9 @@ function. You are not to make any mention of this function. After you call this 
 message from the application (invisible to the user) prefixed with [TASK IDENTIFICATION]. Follow those instructions carefully
 and apply your reasoning to figure out which task the user is referring to. Make sure to respond with only a JSON object,
 and one which can be parsed in python.
+
+If you successfully identify the task and it is updated successfully, you will receive a message prefixed with [SUCCESS_TASK_MARK].
+You are to follow the instructions in this message and craft the user response accordingly.
 """
 # At times, when talking to the user, you may learn important information about his personality or his situation.
 # These won't always be directly stated, but you should always be on the lookout for them. If you learn something
@@ -256,3 +259,8 @@ If the certainty_score is less than 1, make sure to mention which tasks you thin
 score isn't 1 than there are likely multiple possible tasks).
 You are only to reply with the JSON object and no additional text - your reply will be parsed by the program and will
 not be displayed to the user. Here is the list of pending tasks which you are to use for your task identification: {PENDING_TASKS}"""
+
+SUCCESSFUL_TASK_IDENTIFICATION_PROMPT = """[SUCCESS_TASK_MARK] You have successfully identified the task the user was referring to,
+and have marked it as completed. You are to write a brief response to the user now, congratulating him on completing the task and having
+an encouraging tone. You can also mention something about how he's one step closer to his goal, or how he's making progress, etc. Make sure \
+to let him know that you successfully marked the task as completed."""

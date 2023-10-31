@@ -17,6 +17,7 @@ from Nudgie.config.chatgpt_inputs import (
     ONGOING_CONVO_FUNCTIONS,
     CHAT_GPT_MODEL,
     TASK_IDENTIFICATION_PROMPT,
+    SUCCESSFUL_TASK_IDENTIFICATION_PROMPT,
 )
 from Nudgie.constants import (
     CHATGPT_FUNCTION_CALL_KEY,
@@ -123,17 +124,21 @@ def handle_chatgpt_function_call(
             CHATGPT_REGISTER_NOTIFICATIONS_FUNCTION, user, True, messages
         )
         # Generate a response to the user based on the function call.
-        return call_openai_api(messages, INITIAL_CONVO_FUNCTIONS)
+        return call_openai_api(messages)
 
     elif function_name == CHATGPT_COMPLETE_TASK_FUNCTION:
         certainty, identified_tasks, reasoning = identify_task(user.id, messages)
         if certainty == 1 or len(identified_tasks) == 1:
             # log the data point
             identified_tasks[0].completed = True
-            generate_chatgpt_function_success_message(
-                CHATGPT_COMPLETE_TASK_FUNCTION, user, True, messages
+            generate_chat_gpt_message(
+                CHATGPT_USER_ROLE,
+                SUCCESSFUL_TASK_IDENTIFICATION_PROMPT,
+                user,
+                True,
+                messages,
             )
-            return call_openai_api(messages, ONGOING_CONVO_FUNCTIONS)
+            return call_openai_api(messages)
         else:
             logger.info(
                 f"certainty score was only {certainty}. Reason for rating: {reasoning}"
@@ -141,9 +146,7 @@ def handle_chatgpt_function_call(
             # confirm_task(identified_tasks, user, messages)
             return call_openai_api(messages, ONGOING_CONVO_FUNCTIONS)
     else:
-        raise NotImplementedError(
-            f"Function {function_name} is not implemented in ChatGPT."
-        )
+        raise NotImplementedError(f"Function {function_name} is not implemented.")
 
 
 def call_openai_api(messages: list[str], functions: Optional[list] = None):
@@ -326,6 +329,14 @@ def identify_task(user_id: str, messages: list) -> (float, list[NudgieTask]):
     get_task_identification_message(tasks, user, messages)
     response = call_openai_api(messages, ONGOING_CONVO_FUNCTIONS)
     print(f"response for task identification: {response.content}")
+
+    # Make the AI aware that it already executed the function call.
+    # messages.append(
+    #     {
+    #         CHATGPT_ROLE_KEY: CHATGPT_ASSISTANT_ROLE,
+    #         CHATGPT_CONTENT_KEY: response.content,
+    #     }
+    # )
 
     identification_result = json.loads(response.content)
 
