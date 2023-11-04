@@ -6,12 +6,14 @@
     "compounds": [
         {
             "name": "All Services",
-            "configurations": ["Python: Django", "Celery Worker", "Celery Beat"]
+            "configurations": [
+                "Python: Django",
+                "Celery Worker",
+                "Celery Beat"
+            ]
         }
-    ],    
+    ],
     "configurations": [
-
-
         {
             "name": "Python: Django",
             "type": "python",
@@ -23,22 +25,41 @@
                 "--noreload"
             ],
             "django": true,
-            "justMyCode": true
+            "justMyCode": true,
+            "suppressMultipleSessionWarning": true
         },
         {
             "name": "Celery Worker",
             "type": "python",
             "request": "launch",
             "module": "celery",
-            "args": ["-A", "Nudgie", "worker", "-l", "INFO", "--pool=gevent",
-                 "-Q", "nudgie"]
+            "args": [
+                "-A",
+                "Nudgie",
+                "worker",
+                "-l",
+                "INFO",
+                "--pool=gevent",
+                "-Q",
+                "nudgie"
+            ],
+            "suppressMultipleSessionWarning": true
         },
         {
             "name": "Celery Beat",
             "type": "python",
             "request": "launch",
             "module": "celery",
-            "args": ["-A", "Nudgie", "beat", "-l", "info", "--scheduler", "django_celery_beat.schedulers:DatabaseScheduler"]
+            "args": [
+                "-A",
+                "Nudgie",
+                "beat",
+                "-l",
+                "info",
+                "--scheduler",
+                "django_celery_beat.schedulers:DatabaseScheduler"
+            ],
+            "suppressMultipleSessionWarning": true
         }
     ]
 }
