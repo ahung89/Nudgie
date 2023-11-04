@@ -75,9 +75,11 @@ def get_periodic_task_data(id):
 def convert_chatgpt_task_data_to_task_data(
     chatgpt_task_data: dict[Any, Any], user: User
 ) -> TaskData:
+    print(f"creating CrontabSchedule for {chatgpt_task_data[CRONTAB_AI_STRUCT_KEY]}")
+
     """Convert a dictionary of key-value pairs from the chatgpt task data to a TaskData object."""
     cron_schedule, _ = CrontabSchedule.objects.get_or_create(
-        chatgpt_task_data[CRONTAB_AI_STRUCT_KEY]
+        **chatgpt_task_data[CRONTAB_AI_STRUCT_KEY]
     )
     due_date = calculate_due_date_from_crontab(cron_schedule, user).isoformat()
 

@@ -3,6 +3,7 @@ from datetime import datetime
 from django.contrib.auth.models import User
 from django_celery_beat.models import CrontabSchedule
 from Nudgie.models import NudgieTask
+from Nudgie.time_utils.time import get_next_run_time_from_crontab
 from Nudgie.constants import (
     DEADLINE_HANDLER,
     NUDGE_HANDLER,
@@ -10,6 +11,7 @@ from Nudgie.constants import (
     QUEUE_NAME,
     DIALOGUE_TYPE_NUDGE,
     DIALOGUE_TYPE_REMINDER,
+    DIALOGUE_TYPE_DEADLINE,
 )
 from Nudgie.scheduling.periodic_task_helper import (
     TaskData,
@@ -20,15 +22,21 @@ from Nudgie.scheduling.periodic_task_helper import (
 def schedule_deadline_task(task_data: TaskData) -> None:
     """Schedule a deadline task to run at the specified crontab time."""
     due_date_as_datetime = datetime.fromisoformat(task_data.due_date)
-    crontab = CrontabSchedule.objects.create(
+    print(f"creating crontab for {due_date_as_datetime}")
+    crontab, _ = CrontabSchedule.objects.get_or_create(
         minute=due_date_as_datetime.minute,
         hour=due_date_as_datetime.hour,
-        day_of_week=due_date_as_datetime.day,
-        day_of_month=due_date_as_datetime.month,
-        month_of_year=due_date_as_datetime.year,
+        day_of_month=due_date_as_datetime.day,
+        month_of_year=due_date_as_datetime.month,
     )
     # Update the TaskData job non-destructively
-    task_data = task_data._replace(crontab=crontab)
+    task_data = task_data._replace(
+        crontab=crontab,
+        dialogue_type=DIALOGUE_TYPE_DEADLINE,
+        next_run_time=get_next_run_time_from_crontab(
+            crontab, User.objects.get(id=task_data.user_id)
+        ).isoformat(),
+    )
     schedule_periodic_task(task_data, DEADLINE_HANDLER, True)
 
 

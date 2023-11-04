@@ -7,7 +7,7 @@ from django_celery_beat.models import PeriodicTask, CrontabSchedule
 from django.contrib.auth.models import User
 
 from Nudgie.time_utils.time import get_time, set_time, get_next_run_time_from_crontab
-from .tasks import handle_nudge, handle_reminder
+from .tasks import handle_nudge, handle_reminder, deadline_handler
 from .chat.chatgpt import handle_convo
 from .models import Conversation, MockedTime, NudgieTask
 from .constants import (
@@ -29,6 +29,8 @@ from .constants import (
     CHATBOT_URL_PATH,
     UTF_8,
     DIALOGUE_TYPE_REMINDER,
+    DIALOGUE_TYPE_NUDGE,
+    DIALOGUE_TYPE_DEADLINE,
     QUEUE_NAME,
     USER_INPUT_MESSAGE_FIELD,
     SEND_TYPE_ASSISTANT,
@@ -122,8 +124,13 @@ def trigger_task(request: HttpRequest) -> HttpResponse:
             ),  # you MUST have the comma after the id or else it won't be treated as a tuple
             queue=QUEUE_NAME,
         ).get()
-    else:
+    elif task_data.dialogue_type == DIALOGUE_TYPE_NUDGE:
         result = handle_nudge.apply_async(
+            args=(task_id,),
+            queue=QUEUE_NAME,
+        ).get()
+    elif task_data.dialogue_type == DIALOGUE_TYPE_DEADLINE:
+        result = deadline_handler.apply_async(
             args=(task_id,),
             queue=QUEUE_NAME,
         ).get()

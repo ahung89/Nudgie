@@ -108,6 +108,10 @@ def deadline_handler(periodic_task_id) -> None:
         print("task incomplete, sending deadline notification")
         generate_and_send_deadline(task_data)
 
+    # Deactivate the task. Only necessary when manually triggering for testing, in production
+    # the one-off switch should take care of this.
+    PeriodicTask.objects.get(id=periodic_task_id).delete()
+
 
 def generate_nudges(user: User, task_data: TaskData) -> None:
     """Generate nudges for a reminder. The number of nudges is determined by the
