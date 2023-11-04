@@ -1,7 +1,10 @@
 from django_celery_beat.models import PeriodicTask
 from datetime import datetime
+from django.contrib.auth.models import User
+from django_celery_beat.models import CrontabSchedule
 from Nudgie.models import NudgieTask
 from Nudgie.constants import (
+    DEADLINE_HANDLER,
     NUDGE_HANDLER,
     REMINDER_HANDLER,
     QUEUE_NAME,
@@ -14,7 +17,40 @@ from Nudgie.scheduling.periodic_task_helper import (
 )
 
 
-def schedule_periodic_task(task_data: TaskData, celery_task: str):
+def schedule_deadline_task(task_data: TaskData) -> None:
+    """Schedule a deadline task to run at the specified crontab time."""
+    due_date_as_datetime = datetime.fromisoformat(task_data.due_date)
+    crontab = CrontabSchedule.objects.create(
+        minute=due_date_as_datetime.minute,
+        hour=due_date_as_datetime.hour,
+        day_of_week=due_date_as_datetime.day,
+        day_of_month=due_date_as_datetime.month,
+        month_of_year=due_date_as_datetime.year,
+    )
+    # Update the TaskData job non-destructively
+    task_data = task_data._replace(crontab=crontab)
+    schedule_periodic_task(task_data, DEADLINE_HANDLER, True)
+
+
+def schedule_nudgie_task(task_data: TaskData) -> None:
+    """Creates a NudgieTask, indicating an outstanding task. NudgieTasks are used as a source of truth as to which tasks
+    are still pending completion, and which have been completed. Each time a NudgieTask is logged in the database, a new
+    deadline job is also scheduled. This deadline job, when triggered, will notify the user that he failed to complete the
+    task on time."""
+    user = User.objects.get(id=task_data.user_id)
+    NudgieTask.objects.create(
+        user=user,
+        task_name=task_data.task_name,
+        goal_name=task_data.goal_name,
+        due_date=task_data.due_date,
+    )
+
+    schedule_deadline_task(task_data)
+
+
+def schedule_periodic_task(
+    task_data: TaskData, celery_task: str, one_off: bool = False
+):
     """Schedule a periodic task to run at the specified crontab time.
     task_data is a dictionary of key-value pairs that will be passed as kwargs
     to the task.
@@ -24,7 +60,7 @@ def schedule_periodic_task(task_data: TaskData, celery_task: str):
         name=f"{task_data.user_id}: {task_data.dialogue_type} for {str(task_data.crontab)} created at {datetime.now().isoformat()}",
         task=celery_task,
         kwargs=task_data.get_as_kwargs(),
-        one_off=task_data.dialogue_type == DIALOGUE_TYPE_NUDGE,
+        one_off=one_off,
         queue=QUEUE_NAME,
     )
 
@@ -35,7 +71,7 @@ def schedule_nudge(task_data: TaskData):
     to the task.
     """
     new_task_data = task_data._replace(dialogue_type=DIALOGUE_TYPE_NUDGE)
-    schedule_periodic_task(new_task_data, NUDGE_HANDLER)
+    schedule_periodic_task(new_task_data, NUDGE_HANDLER, True)
 
 
 def schedule_reminder(task_data: TaskData):
@@ -52,11 +88,5 @@ def schedule_tasks_from_crontab_list(crontab_list, user):
     for notif in crontab_list:
         task_data = convert_chatgpt_task_data_to_task_data(notif, user)
 
-        NudgieTask.objects.create(
-            user=user,
-            task_name=task_data.task_name,
-            goal_name=task_data.goal_name,
-            due_date=task_data.due_date,
-        )
-
+        schedule_nudgie_task(task_data)
         schedule_reminder(task_data)

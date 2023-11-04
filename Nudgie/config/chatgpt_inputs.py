@@ -251,6 +251,13 @@ Try to vary it up and keep the tone casual but encouraging. After the nudge, wri
 the nudge the way you did, and clearly delineate the explanation.
 """
 
+DEADLINE_MISSED_PROMPT = """[DEADLINE] Your reply to this message is to be a message informing the user that he missed the deadline
+for his task. Task details will be included below, labeled "[[TASK_DETAILS]]. The current time is {current_time}. The due date 
+of the task is {due_date}. You are to use this information, as well as the conversational history, to craft the message.
+
+[[[TASK_DETAILS]]]: {task_details}
+"""
+
 TASK_IDENTIFICATION_PROMPT = """[TASK IDENTIFICATION] You are to guess which of the pending tasks (provided below and labeled
 **PENDING TASKS**) the user is referring to in his most recent message. You are to make this decision using both the context
 and the content of the message. Context = conversational history. E.g. if you just nudged the user to do his workout and he replies

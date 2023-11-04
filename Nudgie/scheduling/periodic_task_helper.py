@@ -37,6 +37,15 @@ class TaskData(NamedTuple):
             }
         )
 
+    def __str__(self):
+        return (
+            f"TaskData(crontab={self.crontab}, task_name={self.task_name}, "
+            f"goal_name={self.goal_name}, user_id={self.user_id}, "
+            f"due_date={self.due_date}, dialogue_type={self.dialogue_type}, "
+            f"reminder_notes={self.reminder_notes}, "
+            f"next_run_time={self.next_run_time})"
+        )
+
 
 def modify_periodic_task(id: int, task_data: Optional[TaskData] = None):
     task = PeriodicTask.objects.get(id=id)

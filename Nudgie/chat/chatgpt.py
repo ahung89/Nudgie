@@ -11,6 +11,7 @@ from Nudgie.scheduling.periodic_task_helper import TaskData
 from Nudgie.config.chatgpt_inputs import (
     INITIAL_CONVO_FUNCTIONS,
     INITIAL_CONVO_SYSTEM_PROMPT,
+    DEADLINE_MISSED_PROMPT,
     NUDGE_PROMPT,
     REMINDER_PROMPT,
     STANDARD_SYSTEM_PROMPT,
@@ -34,6 +35,7 @@ from Nudgie.constants import (
     CHATGPT_REGISTER_NOTIFICATIONS_FUNCTION,
     CHATGPT_COMPLETE_TASK_FUNCTION,
     DIALOGUE_TYPE_REMINDER,
+    DIALOGUE_TYPE_DEADLINE,
     DIALOGUE_TYPE_USER_INPUT,
     DIALOGUE_TYPE_SYSTEM_MESSAGE,
     DIALOGUE_TYPE_NUDGE,
@@ -175,31 +177,39 @@ def generate_reminder_text(task_data: TaskData) -> str:
     )
 
 
-def generate_and_send_reminder_or_nudge(
-    user: User, message: str, is_nudge: bool
+def generate_deadline_missed_text(task_data: TaskData) -> str:
+    return DEADLINE_MISSED_PROMPT.format(
+        current_time=get_time(User.objects.get(id=task_data.user_id)).isoformat(),
+        due_date=task_data.due_date,
+        task_details=str(task_data),
+    )
+
+
+def generate_and_send_message_to_user(
+    user: User, message: str, dialogue_type: str
 ) -> None:
     """
     Prompts ChatGPT to generate a reminder or a nudge, then sends it to the user.
     """
     messages = load_conversation(user)
     generate_chat_gpt_message(
-        CHATGPT_USER_ROLE,
-        message,
-        user,
-        DIALOGUE_TYPE_SYSTEM_MESSAGE,
-        True,
-        messages,
+        role=CHATGPT_USER_ROLE,
+        content=message,
+        user=user,
+        dialogue_type=DIALOGUE_TYPE_SYSTEM_MESSAGE,
+        save_conversation=True,
+        messages=messages,
     )
 
     # Generate, package, and send the response.
     response_text = call_openai_api([get_system_message_standard(), *messages]).content
     generate_chat_gpt_message(
-        CHATGPT_ASSISTANT_ROLE,
-        response_text,
-        user,
-        DIALOGUE_TYPE_NUDGE if is_nudge else DIALOGUE_TYPE_REMINDER,
-        True,
-        messages,
+        role=CHATGPT_ASSISTANT_ROLE,
+        content=response_text,
+        user=user,
+        dialogue_type=dialogue_type,
+        save_conversation=True,
+        messages=messages,
     )
 
 
@@ -207,14 +217,27 @@ def generate_and_send_reminder(user: User, task_data: TaskData) -> None:
     """
     Prompts ChatGPT to generate a reminder, then sends the reminder to the user.
     """
-    generate_and_send_reminder_or_nudge(user, generate_reminder_text(task_data), False)
+    generate_and_send_message_to_user(
+        user, generate_reminder_text(task_data), DIALOGUE_TYPE_REMINDER
+    )
 
 
 def generate_and_send_nudge(user: User) -> None:
     """
     Prompts ChatGPT to generate a nudge, then sends the nudge to the user.
     """
-    generate_and_send_reminder_or_nudge(user, NUDGE_PROMPT, True)
+    generate_and_send_message_to_user(user, NUDGE_PROMPT, DIALOGUE_TYPE_NUDGE)
+
+
+def generate_and_send_deadline(task_data: TaskData) -> None:
+    """
+    Prompts ChatGPT to generate a deadline, then sends the deadline to the user.
+    """
+    generate_and_send_message_to_user(
+        User.objects.get(id=task_data.user_id),
+        generate_deadline_missed_text(task_data),
+        DIALOGUE_TYPE_DEADLINE,
+    )
 
 
 def prepare_api_message(messages: list, has_nudgie_tasks: bool) -> list:

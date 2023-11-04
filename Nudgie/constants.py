@@ -2,12 +2,14 @@ QUEUE_NAME = "nudgie"
 
 DIALOGUE_TYPE_REMINDER = "reminder"
 DIALOGUE_TYPE_NUDGE = "nudge"
+DIALOGUE_TYPE_DEADLINE = "deadline"
 DIALOGUE_TYPE_USER_INPUT = "user_input"
 DIALOGUE_TYPE_SYSTEM_MESSAGE = "system_message"
 DIALOGUE_TYPE_AI_STANDARD = "ai_standard"
 
 NUDGE_HANDLER = "Nudgie.tasks.handle_nudge"
 REMINDER_HANDLER = "Nudgie.tasks.handle_reminder"
+DEADLINE_HANDLER = "Nudgie.tasks.deadline_handler"
 
 # ChatGPT notification scheduling object keys
 REMINDER_DATA_AI_STRUCT_KEY = "reminder_data"

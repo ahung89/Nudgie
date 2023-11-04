@@ -3,7 +3,11 @@ from celery import shared_task
 from Nudgie.scheduling.scheduler import (
     schedule_nudge,
 )
-from Nudgie.chat.chatgpt import generate_and_send_nudge, generate_and_send_reminder
+from Nudgie.chat.chatgpt import (
+    generate_and_send_nudge,
+    generate_and_send_reminder,
+    generate_and_send_deadline,
+)
 from Nudgie.time_utils.time import (
     get_time,
     calculate_due_date_from_crontab,
@@ -84,6 +88,27 @@ def handle_nudge(periodic_task_id) -> None:
     )
 
 
+@shared_task
+def deadline_handler(periodic_task_id) -> None:
+    """
+    When a deadline is reached, if the task has not yet been completed, the user will be notified of his failure to complete the task on time.
+    """
+    task_data = get_periodic_task_data(periodic_task_id)
+    print(
+        f"handling deadline for task {task_data.task_name} due on {task_data.due_date}"
+    )
+
+    nudgie_task = get_nudgie_task(
+        task_data.task_name,
+        task_data.user_id,
+        datetime.fromisoformat(task_data.due_date),
+    )
+
+    if not nudgie_task.completed:
+        print("task incomplete, sending deadline notification")
+        generate_and_send_deadline(task_data)
+
+
 def generate_nudges(user: User, task_data: TaskData) -> None:
     """Generate nudges for a reminder. The number of nudges is determined by the
     time between the due date and the current time, with a bit of cushion added to the end.
@@ -127,13 +152,8 @@ def handle_due_date_update(
     )
 
     modify_periodic_task(periodic_task_id, task_data)
-
-    NudgieTask.objects.create(
-        user=user,
-        task_name=task_data.task_name,
-        goal_name=task_data.goal_name,
-        due_date=new_due_date,
-    )
+    # create a new NudgieTask for the next due date
+    schedule_nudge(task_data._replace(due_date=new_due_date.isoformat()))
 
 
 @shared_task
