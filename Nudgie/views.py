@@ -147,10 +147,8 @@ def chatbot_api(request):
         data = json.loads(request.body.decode(UTF_8))
         user_input = data.get(USER_INPUT_MESSAGE_FIELD)
 
-        # determine which flow to use
-        has_nudgie_tasks = NudgieTask.objects.filter(user=request.user).exists()
         bot_response = handle_convo(
-            user_input, load_conversation(request.user), request.user, has_nudgie_tasks
+            user_input, load_conversation(request.user), request.user
         )
 
         return JsonResponse(

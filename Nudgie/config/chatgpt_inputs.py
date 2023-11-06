@@ -27,7 +27,15 @@ related to productivity or to things you mentioned, become firmer and more brusq
 completely brushing aside anything he says which doesnt further the goal of creating a schedule, after 3 irrelevant
 messages. If he still doesn't get the hint, end the conversation and tell him to come back when he's ready to commit to a schedule.
 
-As soon as you have enough information to do so, confirm the schedule with the user. Continue the exchange for as long
+Before confirming the schedule, also make sure to figure out the duration fo the goal. The rationale, which you will explain to the
+user, is that we want to pick a fixed amount of time because it's easier to commit to something and take it seriously when it has a start
+and end date. Don't let the user pick anything shorter than 2 weeks or so, or longer than a month or so. We want to keep it short, intense,
+and focused. If you know any relevant psychological studies or research which can help you persuade the user, feel free to share it. The 2 weeks
+and 1 month limits can be bent slightly but don't stray too far from it. Express to the user that you are programmed to only work when there
+is a fixed time, so this is how it has to work (and it's also proven to work better this way). Make a note of this duration, and then confirm
+the duration before moving on to the next confirmation.
+
+As soon as you have enough information to do so, confirm the actual schedule of reminders with the user. Continue the exchange for as long
 as necessary and make adjustments as needed until the user confirms. If the user's message starts with SKIPCONF or NOCONF then you
 don't have to confirm and you can directly go to generating the schedule, calling the function, etc. 
 
@@ -35,7 +43,7 @@ Make sure you tell the user that the deadline for each task will be the end of t
 if it is not completed by then. Do this after confirming, and before calling the register_notifications function. Make sure the user
 acknowledges it.
 
-Once the user confirms the schedule, call the register_notifications function with the confirmed schedule as the parameter.
+Once the user confirms the schedule, call the register_notifications function with the confirmed schedule and the end date as the parameters.
 Make sure to also generate a one-word identifier for the goal (e.g. become_bachata_pro, get_in_shape, etc) as well as a one-word
 identifier for the task (e.g. practice_dance, lift_weights, etc). There can be different reminders for different tasks for the same goal.\
 Pay attention to any extra info the user tells you which may be relevant to crafting the reminder, and take brief notes of it and
@@ -106,6 +114,15 @@ You are to follow the instructions in this message and craft the user response a
 # things related to productivity but also things related to his personal passions, his family/relationships, etc.
 # You are basically acting as a friend to the user, so you should be interested in getting to know him better, and you
 # should make an active effort to uncover and take note of these things.
+
+GOAL_COMPLETION_FRAGMENT = """\n\nActually, it turns out that this is not the first goal that the user has worked on with you. Below is a list of the user's
+past goals, along with a summary of each one. So you are to speak to the user with this in mind, and you can refer to this information
+at any point when crafting your message if you deem it to be helpful or motivating to the user.
+
+{GOAL_LIST}
+
+{SUMMARY_OF_GOALS}
+"""
 
 ONGOING_CONVO_FUNCTIONS = [
     {
@@ -234,7 +251,11 @@ INITIAL_CONVO_FUNCTIONS = [
                             },
                         },
                     },
-                }
+                },
+                "length_of_goal": {
+                    "type": "integer",
+                    "description": "the length of the goal, in days",
+                },
             },
             "required": ["minute", "hour", "day_of_week", "goal_name", "task_name"],
         },

@@ -11,6 +11,7 @@ from Nudgie.scheduling.periodic_task_helper import TaskData
 from Nudgie.config.chatgpt_inputs import (
     INITIAL_CONVO_FUNCTIONS,
     INITIAL_CONVO_SYSTEM_PROMPT,
+    GOAL_COMPLETION_FRAGMENT,
     DEADLINE_MISSED_PROMPT,
     NUDGE_PROMPT,
     REMINDER_PROMPT,
@@ -254,7 +255,18 @@ def prepare_api_message(messages: list, has_nudgie_tasks: bool) -> list:
     return api_messages
 
 
-def handle_convo(prompt, messages, user, has_nudgie_tasks) -> str:
+def get_functions(has_nudgie_tasks: bool) -> str:
+    """
+    Selects the functions to pass to OpenAI.
+    """
+    return ONGOING_CONVO_FUNCTIONS if has_nudgie_tasks else INITIAL_CONVO_FUNCTIONS
+
+
+def handle_convo(
+    prompt,
+    messages,
+    user,
+) -> str:
     """
     Calls OpenAI with the user's input and responds accordingly based on the AI's
     response. Returns the final output to display to the user.
@@ -264,12 +276,12 @@ def handle_convo(prompt, messages, user, has_nudgie_tasks) -> str:
     generate_chat_gpt_message(
         CHATGPT_USER_ROLE, prompt, user, DIALOGUE_TYPE_USER_INPUT, True, messages
     )
+
+    has_nudgie_tasks = NudgieTask.objects.filter(user=user).exists()
+
     api_messages = prepare_api_message(messages, has_nudgie_tasks)
 
-    response = call_openai_api(
-        api_messages,
-        ONGOING_CONVO_FUNCTIONS if has_nudgie_tasks else INITIAL_CONVO_FUNCTIONS,
-    )
+    response = call_openai_api(api_messages, get_functions(has_nudgie_tasks))
 
     # Handle function call, if necessary
     if has_function_call(response):
@@ -305,6 +317,21 @@ def get_system_message_for_initial_convo():
         None,
         DIALOGUE_TYPE_SYSTEM_MESSAGE,
         False,
+    )
+
+
+def get_decorated_system_message(message: str) -> str:
+    """
+    Decorates the system message with a goal completion fragment if any goals have been completed by
+    the user in the past.
+    """
+
+    user_has_completed_goals = True  # TODO: implement logic
+
+    return (
+        message
+        if not user_has_completed_goals
+        else f"{message}\n\n{GOAL_COMPLETION_FRAGMENT.format(GOAL_LIST='', SUMMARY_OF_GOALS='')}"
     )
 
 
