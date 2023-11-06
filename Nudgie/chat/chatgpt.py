@@ -33,7 +33,7 @@ from Nudgie.constants import (
     CHATGPT_SYSTEM_ROLE,
     CHATGPT_FUNCTION_ROLE,
     CHATGPT_DEFAULT_FUNCTION_SUCCESS_MESSAGE,
-    CHATGPT_REGISTER_NOTIFICATIONS_FUNCTION,
+    CHATGPT_INITIAL_GOAL_SETUP,
     CHATGPT_COMPLETE_TASK_FUNCTION,
     DIALOGUE_TYPE_REMINDER,
     DIALOGUE_TYPE_DEADLINE,
@@ -116,13 +116,13 @@ def handle_chatgpt_function_call(
     """
     Handles a function call from the OpenAI API, returns the response.
     """
-    if function_name == CHATGPT_REGISTER_NOTIFICATIONS_FUNCTION:
+    if function_name == CHATGPT_INITIAL_GOAL_SETUP:
         schedule_tasks_from_crontab_list(
             function_args[CHATGPT_SCHEDULES_KEY],
             user,
         )
         generate_chatgpt_function_success_message(
-            CHATGPT_REGISTER_NOTIFICATIONS_FUNCTION, user, True, messages
+            CHATGPT_INITIAL_GOAL_SETUP, user, True, messages
         )
         # Generate a response to the user based on the function call.
         return call_openai_api(messages)

@@ -40,10 +40,10 @@ as necessary and make adjustments as needed until the user confirms. If the user
 don't have to confirm and you can directly go to generating the schedule, calling the function, etc. 
 
 Make sure you tell the user that the deadline for each task will be the end of that day, and that the task will be marked as failed
-if it is not completed by then. Do this after confirming, and before calling the register_notifications function. Make sure the user
+if it is not completed by then. Do this after confirming, and before calling the initial_goal_setup function. Make sure the user
 acknowledges it.
 
-Once the user confirms the schedule, call the register_notifications function with the confirmed schedule and the end date as the parameters.
+Once the user confirms the schedule, call the initial_goal_setup function with the confirmed schedule and the end date as the parameters.
 Make sure to also generate a one-word identifier for the goal (e.g. become_bachata_pro, get_in_shape, etc) as well as a one-word
 identifier for the task (e.g. practice_dance, lift_weights, etc). There can be different reminders for different tasks for the same goal.\
 Pay attention to any extra info the user tells you which may be relevant to crafting the reminder, and take brief notes of it and
@@ -198,8 +198,8 @@ ONGOING_CONVO_FUNCTIONS = [
 
 INITIAL_CONVO_FUNCTIONS = [
     {
-        "name": "register_notifications",
-        "description": "register notifications with celery using completed crontab for schedule",
+        "name": "initial_goal_setup",
+        "description": "set up initial goal by registering notifications and logging the duration ",
         "parameters": {
             "type": "object",
             "description": "list of crontab objects",
