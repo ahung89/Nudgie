@@ -14,7 +14,6 @@ DEADLINE_HANDLER = "Nudgie.tasks.deadline_handler"
 # ChatGPT notification scheduling object keys
 REMINDER_DATA_AI_STRUCT_KEY = "reminder_data"
 TASK_NAME_AI_STRUCT_KEY = "task_name"
-GOAL_NAME_AI_STRUCT_KEY = "goal_name"
 REMINDER_NOTES_AI_STRUCT_KEY = "reminder_notes"
 CRONTAB_AI_STRUCT_KEY = "crontab"
 
@@ -35,6 +34,7 @@ CHATGPT_USER_ROLE = "user"
 CHATGPT_ASSISTANT_ROLE = "assistant"
 CHATGPT_SYSTEM_ROLE = "system"
 CHATGPT_FUNCTION_ROLE = "function"
+CHATGPT_GOAL_NAME_KEY = "goal_name"
 
 CHATGPT_DEFAULT_FUNCTION_SUCCESS_MESSAGE = "Success."
 

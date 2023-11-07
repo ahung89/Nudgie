@@ -9,7 +9,7 @@ from django.contrib.auth.models import User
 from Nudgie.time_utils.time import get_time, set_time, get_next_run_time_from_crontab
 from .tasks import handle_nudge, handle_reminder, deadline_handler
 from .chat.chatgpt import handle_convo
-from .models import Conversation, MockedTime, NudgieTask
+from .models import Conversation, MockedTime, NudgieTask, Goal
 from .constants import (
     TEST_FAST_FORWARD_SECONDS,
     CELERY_BACKEND_CLEANUP_TASK,
@@ -164,6 +164,7 @@ def reset_user_data(request):
     PeriodicTask.objects.filter(
         kwargs__contains=f'"{PERIODIC_TASK_USER_ID}": {request.user.id}'
     ).delete()
+    Goal.objects.filter(user=request.user).delete()
     CrontabSchedule.objects.exclude(periodictask__isnull=False).delete()
     MockedTime.objects.filter(user=request.user).delete()
 

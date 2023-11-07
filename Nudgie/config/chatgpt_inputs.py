@@ -233,10 +233,6 @@ INITIAL_CONVO_FUNCTIONS = [
                                 "type": "object",
                                 "description": "data needed to carry out the reminder.",
                                 "properties": {
-                                    "goal_name": {
-                                        "type": "string",
-                                        "description": "one-word ID identifying the goal.",
-                                    },
                                     "task_name": {
                                         "type": "string",
                                         "description": "one-word ID identifying the task. e.g. for"
@@ -251,6 +247,10 @@ INITIAL_CONVO_FUNCTIONS = [
                             },
                         },
                     },
+                },
+                "goal_name": {
+                    "type": "string",
+                    "description": "the name of the goal",
                 },
                 "length_of_goal": {
                     "type": "integer",

@@ -4,7 +4,7 @@ import logging
 from django.contrib.auth.models import User
 from django.core.serializers import serialize
 from typing import Optional
-from Nudgie.models import NudgieTask
+from Nudgie.models import NudgieTask, Goal
 from Nudgie.chat.dialogue import load_conversation, save_line_of_speech
 from Nudgie.scheduling.scheduler import schedule_tasks_from_crontab_list
 from Nudgie.scheduling.periodic_task_helper import TaskData
@@ -41,6 +41,7 @@ from Nudgie.constants import (
     DIALOGUE_TYPE_SYSTEM_MESSAGE,
     DIALOGUE_TYPE_NUDGE,
     DIALOGUE_TYPE_AI_STANDARD,
+    CHATGPT_GOAL_NAME_KEY,
     OPENAI_MODEL_FIELD,
     OPENAI_MESSAGE_FIELD,
     OPENAI_FUNCTIONS_FIELD,
@@ -123,6 +124,11 @@ def handle_chatgpt_function_call(
         )
         generate_chatgpt_function_success_message(
             CHATGPT_INITIAL_GOAL_SETUP, user, True, messages
+        )
+        goal = Goal.objects.create(
+            user=user,
+            goal_name=function_args[CHATGPT_GOAL_NAME_KEY],
+            # goal_end_date=function_args["goal_end_date"],
         )
         # Generate a response to the user based on the function call.
         return call_openai_api(messages)

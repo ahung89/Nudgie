@@ -24,6 +24,10 @@ To stop it or restart it, the following commands are relevant:
 rabbitmqctl shutdown (this shuts down rabbitMQ and its runtime)
 rabbitmqctl stop_app (stops rabbitMQ but leaves the runtime, aka the erlang VM, running)
 
+run migrations when updating db model
+py manage.py makemigrations
+py manage.py migrate
+
 admin
 username: drew
 email: awhhung@gmail.com

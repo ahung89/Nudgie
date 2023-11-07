@@ -23,6 +23,17 @@ class Conversation(models.Model):
         return f"Conversation with {self.user.username} - {self.timestamp}"
 
 
+class Goal(models.Model):
+    user = models.ForeignKey(User, related_name="goals", on_delete=models.CASCADE)
+    goal_name = models.CharField(max_length=100)
+    goal_start_date = models.DateTimeField(auto_now_add=True)
+    goal_end_date = models.DateTimeField(auto_now_add=False)
+    goal_completion_date = models.DateTimeField(auto_now_add=False, null=True)
+
+    def __str__(self):
+        return f"{self.goal_name=} {self.goal_start_date=} {self.goal_end_date=}"
+
+
 class NudgieTask(models.Model):
     user = models.ForeignKey(User, related_name="tasks", on_delete=models.CASCADE)
     # eventually i'm going to want to store a description of the habit and goal, for
