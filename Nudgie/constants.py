@@ -3,6 +3,7 @@ QUEUE_NAME = "nudgie"
 DIALOGUE_TYPE_REMINDER = "reminder"
 DIALOGUE_TYPE_NUDGE = "nudge"
 DIALOGUE_TYPE_DEADLINE = "deadline"
+DIALOGUE_TYPE_GOAL_END = "goal_end"
 DIALOGUE_TYPE_USER_INPUT = "user_input"
 DIALOGUE_TYPE_SYSTEM_MESSAGE = "system_message"
 DIALOGUE_TYPE_AI_STANDARD = "ai_standard"
@@ -10,12 +11,14 @@ DIALOGUE_TYPE_AI_STANDARD = "ai_standard"
 NUDGE_HANDLER = "Nudgie.tasks.handle_nudge"
 REMINDER_HANDLER = "Nudgie.tasks.handle_reminder"
 DEADLINE_HANDLER = "Nudgie.tasks.deadline_handler"
+GOAL_END_HANDLER = "Nudgie.tasks.goal_end_handler"
 
 # ChatGPT notification scheduling object keys
 REMINDER_DATA_AI_STRUCT_KEY = "reminder_data"
 TASK_NAME_AI_STRUCT_KEY = "task_name"
 REMINDER_NOTES_AI_STRUCT_KEY = "reminder_notes"
 CRONTAB_AI_STRUCT_KEY = "crontab"
+GOAL_NAME_AI_STRUCT_KEY = "goal_name"
 
 # ChatGPT task identification message key
 PENDING_TASKS_KEY = "PENDING_TASKS"
@@ -35,6 +38,7 @@ CHATGPT_ASSISTANT_ROLE = "assistant"
 CHATGPT_SYSTEM_ROLE = "system"
 CHATGPT_FUNCTION_ROLE = "function"
 CHATGPT_GOAL_NAME_KEY = "goal_name"
+CHATGPT_GOAL_LENGTH_DAYS = "goal_length_days"
 
 CHATGPT_DEFAULT_FUNCTION_SUCCESS_MESSAGE = "Success."
 

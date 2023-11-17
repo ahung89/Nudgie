@@ -6,7 +6,10 @@ from django.core.serializers import serialize
 from typing import Optional
 from Nudgie.models import NudgieTask, Goal
 from Nudgie.chat.dialogue import load_conversation, save_line_of_speech
-from Nudgie.scheduling.scheduler import schedule_tasks_from_crontab_list
+from Nudgie.scheduling.scheduler import (
+    schedule_tasks_from_crontab_list,
+    schedule_goal_end,
+)
 from Nudgie.scheduling.periodic_task_helper import TaskData
 from Nudgie.config.chatgpt_inputs import (
     INITIAL_CONVO_FUNCTIONS,
@@ -35,12 +38,14 @@ from Nudgie.constants import (
     CHATGPT_DEFAULT_FUNCTION_SUCCESS_MESSAGE,
     CHATGPT_INITIAL_GOAL_SETUP,
     CHATGPT_COMPLETE_TASK_FUNCTION,
+    CHATGPT_GOAL_LENGTH_DAYS,
     DIALOGUE_TYPE_REMINDER,
     DIALOGUE_TYPE_DEADLINE,
     DIALOGUE_TYPE_USER_INPUT,
     DIALOGUE_TYPE_SYSTEM_MESSAGE,
     DIALOGUE_TYPE_NUDGE,
     DIALOGUE_TYPE_AI_STANDARD,
+    DIALOGUE_TYPE_GOAL_END,
     CHATGPT_GOAL_NAME_KEY,
     OPENAI_MODEL_FIELD,
     OPENAI_MESSAGE_FIELD,
@@ -49,7 +54,8 @@ from Nudgie.constants import (
     TASK_IDENTIFICATION_CERTAINTY_SCORE,
     TASK_IDENTIFICATION_REASONING,
 )
-from Nudgie.time_utils.time import get_time
+from Nudgie.time_utils.time import get_time, date_to_crontab
+from Nudgie.goals.goals import create_goal
 
 # __name__ is the name of the current module, automatically set by Python.
 logger = logging.getLogger(__name__)
@@ -111,6 +117,23 @@ def generate_chatgpt_function_success_message(
     return message
 
 
+def handle_goal_creation(user: User, goal_name: str, goal_length_days: int) -> None:
+    """Create goal and schedule event for goal end"""
+    goal = create_goal(
+        user=user, goal_name=goal_name, goal_length_days=goal_length_days
+    )
+
+    schedule_goal_end(
+        TaskData(
+            crontab=date_to_crontab(goal.goal_end_date),
+            user_id=user.id,
+            goal_name=goal_name,
+            due_date=goal.goal_end_date.isoformat(),
+            dialogue_type=DIALOGUE_TYPE_GOAL_END,
+        )
+    )
+
+
 def handle_chatgpt_function_call(
     function_name: str, function_args: dict, user: User, messages: list
 ):
@@ -120,16 +143,18 @@ def handle_chatgpt_function_call(
     if function_name == CHATGPT_INITIAL_GOAL_SETUP:
         schedule_tasks_from_crontab_list(
             function_args[CHATGPT_SCHEDULES_KEY],
+            function_args[CHATGPT_GOAL_NAME_KEY],
             user,
         )
         generate_chatgpt_function_success_message(
             CHATGPT_INITIAL_GOAL_SETUP, user, True, messages
         )
-        goal = Goal.objects.create(
-            user=user,
-            goal_name=function_args[CHATGPT_GOAL_NAME_KEY],
-            # goal_end_date=function_args["goal_end_date"],
+        handle_goal_creation(
+            user,
+            function_args[CHATGPT_GOAL_NAME_KEY],
+            function_args[CHATGPT_GOAL_LENGTH_DAYS],
         )
+
         # Generate a response to the user based on the function call.
         return call_openai_api(messages)
 

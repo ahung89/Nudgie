@@ -72,6 +72,16 @@ def get_next_run_time_from_crontab(
     )
 
 
+def date_to_crontab(date: datetime) -> CrontabSchedule:
+    """Converts a datetime object to a CrontabSchedule object."""
+    return CrontabSchedule.objects.create(
+        minute=date.minute,
+        hour=date.hour,
+        day_of_month=date.day,
+        month_of_year=date.month,
+    )
+
+
 def end_of_day(dt):
     return dt.replace(hour=23, minute=59, second=59)
 

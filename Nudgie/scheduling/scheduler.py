@@ -3,15 +3,17 @@ from datetime import datetime
 from django.contrib.auth.models import User
 from django_celery_beat.models import CrontabSchedule
 from Nudgie.models import NudgieTask
-from Nudgie.time_utils.time import get_next_run_time_from_crontab
+from Nudgie.time_utils.time import get_next_run_time_from_crontab, date_to_crontab
 from Nudgie.constants import (
     DEADLINE_HANDLER,
     NUDGE_HANDLER,
     REMINDER_HANDLER,
+    GOAL_END_HANDLER,
     QUEUE_NAME,
     DIALOGUE_TYPE_NUDGE,
     DIALOGUE_TYPE_REMINDER,
     DIALOGUE_TYPE_DEADLINE,
+    DIALOGUE_TYPE_GOAL_END,
 )
 from Nudgie.scheduling.periodic_task_helper import (
     TaskData,
@@ -22,13 +24,10 @@ from Nudgie.scheduling.periodic_task_helper import (
 def schedule_deadline_task(task_data: TaskData) -> None:
     """Schedule a deadline task to run at the specified crontab time."""
     due_date_as_datetime = datetime.fromisoformat(task_data.due_date)
+
     print(f"creating crontab for {due_date_as_datetime}")
-    crontab, _ = CrontabSchedule.objects.get_or_create(
-        minute=due_date_as_datetime.minute,
-        hour=due_date_as_datetime.hour,
-        day_of_month=due_date_as_datetime.day,
-        month_of_year=due_date_as_datetime.month,
-    )
+    crontab = date_to_crontab(due_date_as_datetime)
+
     # Update the TaskData job non-destructively
     task_data = task_data._replace(
         crontab=crontab,
@@ -79,7 +78,17 @@ def schedule_nudge(task_data: TaskData):
     to the task.
     """
     new_task_data = task_data._replace(dialogue_type=DIALOGUE_TYPE_NUDGE)
-    schedule_periodic_task(new_task_data, NUDGE_HANDLER, True)
+    schedule_periodic_task(
+        task_data=new_task_data, celery_task=NUDGE_HANDLER, one_off=True
+    )
+
+
+def schedule_goal_end(task_data: TaskData):
+    """Schedule the event for when a goal's end date is reached."""
+    new_task_data = task_data._replace(dialogue_type=DIALOGUE_TYPE_GOAL_END)
+    schedule_periodic_task(
+        task_data=new_task_data, celery_task=GOAL_END_HANDLER, one_off=True
+    )
 
 
 def schedule_reminder(task_data: TaskData):
@@ -88,13 +97,13 @@ def schedule_reminder(task_data: TaskData):
     to the task.
     """
     new_task_data = task_data._replace(dialogue_type=DIALOGUE_TYPE_REMINDER)
-    schedule_periodic_task(new_task_data, REMINDER_HANDLER)
+    schedule_periodic_task(task_data=new_task_data, celery_task=REMINDER_HANDLER)
 
 
-def schedule_tasks_from_crontab_list(crontab_list, user):
+def schedule_tasks_from_crontab_list(crontab_list, goal_name, user):
     """Given a list of crontab objects, schedule the tasks to run at the specified times."""
     for notif in crontab_list:
-        task_data = convert_chatgpt_task_data_to_task_data(notif, user)
+        task_data = convert_chatgpt_task_data_to_task_data(notif, goal_name, user)
 
         schedule_nudgie_task(task_data)
         schedule_reminder(task_data)

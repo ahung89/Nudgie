@@ -73,7 +73,7 @@ def get_periodic_task_data(id):
 
 
 def convert_chatgpt_task_data_to_task_data(
-    chatgpt_task_data: dict[Any, Any], user: User
+    chatgpt_task_data: dict[Any, Any], goal_name: str, user: User
 ) -> TaskData:
     print(f"creating CrontabSchedule for {chatgpt_task_data[CRONTAB_AI_STRUCT_KEY]}")
 
@@ -88,9 +88,7 @@ def convert_chatgpt_task_data_to_task_data(
         task_name=chatgpt_task_data[REMINDER_DATA_AI_STRUCT_KEY][
             TASK_NAME_AI_STRUCT_KEY
         ],
-        goal_name=chatgpt_task_data[REMINDER_DATA_AI_STRUCT_KEY][
-            GOAL_NAME_AI_STRUCT_KEY
-        ],
+        goal_name=goal_name,
         user_id=user.id,
         due_date=due_date,
         dialogue_type=DIALOGUE_TYPE_REMINDER,  # Always reminders, the AI doesn't schedule nudges

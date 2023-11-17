@@ -252,7 +252,7 @@ INITIAL_CONVO_FUNCTIONS = [
                     "type": "string",
                     "description": "the name of the goal",
                 },
-                "length_of_goal": {
+                "goal_length_days": {
                     "type": "integer",
                     "description": "the length of the goal, in days",
                 },
