@@ -305,3 +305,8 @@ the reason for the ambiguity. Be persistent in asking for clarification, but don
 changes the subject, politely guide it back to the task clarification. If the user continues to be unresponsive or makes it obvious in any way
 that he is intentionally trying to avoid clarifying, allow the subject change but mention that the task will not be marked as completed until he
 clarifies it adequately."""
+
+GOAL_COMPLETION_PROMPT = """[GOAL COMPLETION] You are to congratulate the user on completing his goal. You are to give a summary based on the user's
+performance data, which is shown below:
+{PERFORMANCE_DATA}
+"""
