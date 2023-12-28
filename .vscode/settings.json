@@ -1,8 +1,14 @@
 {
     "[python]": {
-        "editor.defaultFormatter": "ms-python.black-formatter"
+        "editor.defaultFormatter": "ms-python.black-formatter",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": "always"
+        }
     },
     "python.formatting.provider": "none",
     "editor.tabCompletion": "on",
-    "python.analysis.autoImportCompletions": true
+    "python.analysis.autoImportCompletions": true,
+    "workbench.tree.enableStickyScroll": true,
+    "multiDiffEditor.experimental.enabled": true
 }
