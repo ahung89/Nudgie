@@ -89,6 +89,27 @@ def handle_nudge(periodic_task_id) -> None:
 
 
 @shared_task
+def goal_end_handler(periodic_task_id) -> None:
+    """
+    When a goal ends, Nudgie will generate a summary of the performance to display to the user. Also, it will set
+    all the necessary flags to clear the task.
+
+    Things that need to happen:
+    - reset the "state machine" from the ongoing convo state to the goal creation state, or
+    to another state that makes sense. right now the state machine is handled in prepare_api_message
+    via a simple if-else statement, but it might be better to specific state-machine-specific logic.
+        - this prompt will likely be a modified version of the initial prompt.
+    - generate performance summary and display to the user.
+    - unload any goal-related information that was being added to the message, e.g.
+    current goal name, goal start date, goal end date, etc.
+    - make sure that the goal completion fragment starts getting appended. might be good
+    to come up with some infrastructure for augmenting the original prompts, or for
+    augmenting what gets sent to the AI, in an easily trackable and manageable way.
+    """
+    pass
+
+
+@shared_task
 def deadline_handler(periodic_task_id) -> None:
     """
     When a deadline is reached, if the task has not yet been completed, the user will be notified of his failure to complete the task on time.
