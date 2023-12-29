@@ -16,7 +16,7 @@ class Conversation(models.Model):
         max_length=20, choices=[("user", "User"), ("assistant", "Assistant")]
     )
     content = models.TextField(blank=True)
-    timestamp = models.DateTimeField(auto_now_add=True)  # is this even being used?
+    timestamp = models.DateTimeField(auto_now_add=True)
     dialogue_type = models.TextField(default="standard")
 
     def __str__(self):

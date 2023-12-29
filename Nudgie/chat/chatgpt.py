@@ -47,6 +47,7 @@ from Nudgie.constants import (
     OPENAI_MESSAGE_FIELD,
     OPENAI_MODEL_FIELD,
     PENDING_TASKS_KEY,
+    REMINDER_DATA_AI_STRUCT_KEY,
     TASK_IDENTIFICATION_CERTAINTY_SCORE,
     TASK_IDENTIFICATION_REASONING,
 )
@@ -61,13 +62,17 @@ from Nudgie.time_utils.time import date_to_crontab, get_time
 
 # __name__ is the name of the current module, automatically set by Python.
 logger = logging.getLogger(__name__)
+client = openai.OpenAI()
 
 
 def has_function_call(response) -> bool:
     """
     Determines whether the response from the OpenAI API contains a function call.
     """
-    return CHATGPT_FUNCTION_CALL_KEY in response
+    return (
+        hasattr(response, CHATGPT_FUNCTION_CALL_KEY)
+        and response.function_call is not None
+    )
 
 
 def generate_chat_gpt_message(
@@ -198,7 +203,7 @@ def call_openai_api(messages: list[str], functions: Optional[list] = None):
     if functions is not None:
         args[OPENAI_FUNCTIONS_FIELD] = functions
 
-    response = openai.ChatCompletion.create(**args)
+    response = client.chat.completions.create(**args)
     return response.choices[0].message
 
 

@@ -1,7 +1,8 @@
 # this is just a playground for me to test code on the console
 
-import db
 import openai
+
+import db
 
 
 def get_and_print_user_input():
@@ -17,7 +18,8 @@ def call_chat_gpt_api():
 
 
 def create_chat_gpt_request(prompt):
-    response = openai.ChatCompletion.create(
+    client = openai.OpenAI()
+    response = client.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[
             {

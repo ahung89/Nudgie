@@ -1,24 +1,25 @@
-from django_celery_beat.models import PeriodicTask
 from datetime import datetime
+
 from django.contrib.auth.models import User
-from django_celery_beat.models import CrontabSchedule
-from Nudgie.models import NudgieTask
-from Nudgie.time_utils.time import get_next_run_time_from_crontab, date_to_crontab
+from django_celery_beat.models import CrontabSchedule, PeriodicTask
+
 from Nudgie.constants import (
     DEADLINE_HANDLER,
-    NUDGE_HANDLER,
-    REMINDER_HANDLER,
-    GOAL_END_HANDLER,
-    QUEUE_NAME,
-    DIALOGUE_TYPE_NUDGE,
-    DIALOGUE_TYPE_REMINDER,
     DIALOGUE_TYPE_DEADLINE,
     DIALOGUE_TYPE_GOAL_END,
+    DIALOGUE_TYPE_NUDGE,
+    DIALOGUE_TYPE_REMINDER,
+    GOAL_END_HANDLER,
+    NUDGE_HANDLER,
+    QUEUE_NAME,
+    REMINDER_HANDLER,
 )
+from Nudgie.models import NudgieTask
 from Nudgie.scheduling.periodic_task_helper import (
     TaskData,
     convert_chatgpt_task_data_to_task_data,
 )
+from Nudgie.time_utils.time import date_to_crontab, get_next_run_time_from_crontab
 
 
 def schedule_deadline_task(task_data: TaskData) -> None:
@@ -85,7 +86,11 @@ def schedule_nudge(task_data: TaskData):
 
 def schedule_goal_end(task_data: TaskData):
     """Schedule the event for when a goal's end date is reached."""
-    new_task_data = task_data._replace(dialogue_type=DIALOGUE_TYPE_GOAL_END)
+    # task name is set to "" here because this is a special case. normally this object is used
+    # to pass data about a task, but in this case we only need the goal data.
+    new_task_data = task_data._replace(
+        dialogue_type=DIALOGUE_TYPE_GOAL_END, task_name=""
+    )
     schedule_periodic_task(
         task_data=new_task_data, celery_task=GOAL_END_HANDLER, one_off=True
     )

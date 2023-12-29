@@ -1,5 +1,6 @@
-from Nudgie.models import Conversation
 from django.contrib.auth.models import User
+
+from Nudgie.models import Conversation
 
 
 def load_conversation(user):
@@ -17,5 +18,10 @@ def save_line_of_speech(
         message_type=message_type,
         dialogue_type=dialogue_type,
         content=content,
+    )
+    print(
+        f"{message.user=} {message.message_type=} {message.dialogue_type=}"
+        f" {message.content=} {message.timestamp=} {message.id=}"
+        f" {message.pk=} {message.save}"
     )
     message.save()
