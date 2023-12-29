@@ -1,61 +1,63 @@
-import openai
 import json
 import logging
+from typing import Optional
+
+import openai
 from django.contrib.auth.models import User
 from django.core.serializers import serialize
-from typing import Optional
-from Nudgie.models import NudgieTask, Goal
+
 from Nudgie.chat.dialogue import load_conversation, save_line_of_speech
-from Nudgie.scheduling.scheduler import (
-    schedule_tasks_from_crontab_list,
-    schedule_goal_end,
-)
-from Nudgie.scheduling.periodic_task_helper import TaskData
 from Nudgie.config.chatgpt_inputs import (
+    CHAT_GPT_MODEL,
+    CLARIFICATION_PROMPT,
+    DEADLINE_MISSED_PROMPT,
+    GOAL_COMPLETION_FRAGMENT,
     INITIAL_CONVO_FUNCTIONS,
     INITIAL_CONVO_SYSTEM_PROMPT,
-    GOAL_COMPLETION_FRAGMENT,
-    DEADLINE_MISSED_PROMPT,
     NUDGE_PROMPT,
+    ONGOING_CONVO_FUNCTIONS,
     REMINDER_PROMPT,
     STANDARD_SYSTEM_PROMPT,
-    ONGOING_CONVO_FUNCTIONS,
-    CHAT_GPT_MODEL,
-    TASK_IDENTIFICATION_PROMPT,
     SUCCESSFUL_TASK_IDENTIFICATION_PROMPT,
-    CLARIFICATION_PROMPT,
+    TASK_IDENTIFICATION_PROMPT,
 )
 from Nudgie.constants import (
-    CHATGPT_FUNCTION_CALL_KEY,
-    CHATGPT_SCHEDULES_KEY,
-    CHATGPT_ROLE_KEY,
-    CHATGPT_CONTENT_KEY,
-    CHATGPT_FUNCTION_NAME_KEY,
-    CHATGPT_USER_ROLE,
     CHATGPT_ASSISTANT_ROLE,
-    CHATGPT_SYSTEM_ROLE,
-    CHATGPT_FUNCTION_ROLE,
-    CHATGPT_DEFAULT_FUNCTION_SUCCESS_MESSAGE,
-    CHATGPT_INITIAL_GOAL_SETUP,
     CHATGPT_COMPLETE_TASK_FUNCTION,
+    CHATGPT_CONTENT_KEY,
+    CHATGPT_DEFAULT_FUNCTION_SUCCESS_MESSAGE,
+    CHATGPT_FUNCTION_CALL_KEY,
+    CHATGPT_FUNCTION_NAME_KEY,
+    CHATGPT_FUNCTION_ROLE,
     CHATGPT_GOAL_LENGTH_DAYS,
-    DIALOGUE_TYPE_REMINDER,
-    DIALOGUE_TYPE_DEADLINE,
-    DIALOGUE_TYPE_USER_INPUT,
-    DIALOGUE_TYPE_SYSTEM_MESSAGE,
-    DIALOGUE_TYPE_NUDGE,
-    DIALOGUE_TYPE_AI_STANDARD,
-    DIALOGUE_TYPE_GOAL_END,
     CHATGPT_GOAL_NAME_KEY,
-    OPENAI_MODEL_FIELD,
-    OPENAI_MESSAGE_FIELD,
+    CHATGPT_INITIAL_GOAL_SETUP,
+    CHATGPT_ROLE_KEY,
+    CHATGPT_SCHEDULES_KEY,
+    CHATGPT_SYSTEM_ROLE,
+    CHATGPT_USER_ROLE,
+    DIALOGUE_TYPE_AI_STANDARD,
+    DIALOGUE_TYPE_DEADLINE,
+    DIALOGUE_TYPE_GOAL_END,
+    DIALOGUE_TYPE_NUDGE,
+    DIALOGUE_TYPE_REMINDER,
+    DIALOGUE_TYPE_SYSTEM_MESSAGE,
+    DIALOGUE_TYPE_USER_INPUT,
     OPENAI_FUNCTIONS_FIELD,
+    OPENAI_MESSAGE_FIELD,
+    OPENAI_MODEL_FIELD,
     PENDING_TASKS_KEY,
     TASK_IDENTIFICATION_CERTAINTY_SCORE,
     TASK_IDENTIFICATION_REASONING,
 )
-from Nudgie.time_utils.time import get_time, date_to_crontab
 from Nudgie.goals.goals import create_goal
+from Nudgie.models import Goal, NudgieTask
+from Nudgie.scheduling.periodic_task_helper import TaskData
+from Nudgie.scheduling.scheduler import (
+    schedule_goal_end,
+    schedule_tasks_from_crontab_list,
+)
+from Nudgie.time_utils.time import date_to_crontab, get_time
 
 # __name__ is the name of the current module, automatically set by Python.
 logger = logging.getLogger(__name__)

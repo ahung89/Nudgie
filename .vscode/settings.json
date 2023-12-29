@@ -3,12 +3,16 @@
         "editor.defaultFormatter": "ms-python.black-formatter",
         "editor.formatOnSave": true,
         "editor.codeActionsOnSave": {
-            "source.organizeImports": "always"
+            "source.organizeImports": true
         }
     },
     "python.formatting.provider": "none",
     "editor.tabCompletion": "on",
     "python.analysis.autoImportCompletions": true,
     "workbench.tree.enableStickyScroll": true,
-    "multiDiffEditor.experimental.enabled": true
+    "multiDiffEditor.experimental.enabled": true,
+    "isort.args": [
+        "--profile",
+        "black"
+    ],
 }
