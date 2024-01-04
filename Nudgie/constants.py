@@ -20,6 +20,10 @@ REMINDER_NOTES_AI_STRUCT_KEY = "reminder_notes"
 CRONTAB_AI_STRUCT_KEY = "crontab"
 GOAL_NAME_AI_STRUCT_KEY = "goal_name"
 
+# NudgieTask fields
+NUDGIE_TASK_TASK_NAME_FIELD = "task_name"
+NUDGIE_TASK_DUE_DATE_FIELD = "due_date"
+
 # ChatGPT task identification message key
 PENDING_TASKS_KEY = "PENDING_TASKS"
 
@@ -85,5 +89,6 @@ CHATBOT_URL_PATH = "/chatbot"
 # Task Identification API Constants
 TASK_IDENTIFICATION_CERTAINTY_SCORE = "certainty_score"
 TASK_IDENTIFICATION_REASONING = "reasoning"
+TASK_IDENTIFICATION_NUDGIE_TASK_ID = "nudgie_task_id"
 
 POST = "POST"

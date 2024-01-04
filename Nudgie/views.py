@@ -1,44 +1,46 @@
-from datetime import datetime, timedelta
 import json
-from django.forms import model_to_dict
-from django.http import HttpResponse, JsonResponse, HttpResponseRedirect, HttpRequest
-from django.shortcuts import render
-from django_celery_beat.models import PeriodicTask, CrontabSchedule
-from django.contrib.auth.models import User
+from datetime import datetime, timedelta
 
-from Nudgie.time_utils.time import get_time, set_time, get_next_run_time_from_crontab
-from .tasks import handle_nudge, handle_reminder, deadline_handler
-from .chat.chatgpt import handle_convo
-from .models import Conversation, MockedTime, NudgieTask, Goal
-from .constants import (
-    TEST_FAST_FORWARD_SECONDS,
-    CELERY_BACKEND_CLEANUP_TASK,
-    PERIODIC_TASK_NEXT_RUNTIME_FIELD,
-    CHATBOT_TEMPLATE_NAME,
-    CHATBOT_CONVERSATION_FIELD,
-    CHATBOT_TEMPLATE_SERVER_TIME_FIELD,
-    CHATBOT_TEMPLATE_TASKS_FIELD,
-    CONVERSATION_FRAGMENT_TEMPLATE_NAME,
-    CONVERSATION_FRAGMENT_CONVERSATION_FIELD,
-    TASKLIST_FRAGMENT_TEMPLATE_NAME,
-    TASKLIST_FRAGMENT_TASKS_FIELD,
-    TASKLIST_FRAGMENT_SERVER_TIME_FIELD,
-    MESSAGE_FIELD,
-    PERIODIC_TASK_USER_ID,
-    SENDER_MESSAGE,
-    CHATBOT_URL_PATH,
-    UTF_8,
-    DIALOGUE_TYPE_REMINDER,
-    DIALOGUE_TYPE_NUDGE,
-    DIALOGUE_TYPE_DEADLINE,
-    QUEUE_NAME,
-    USER_INPUT_MESSAGE_FIELD,
-    SEND_TYPE_ASSISTANT,
-    POST,
-    PERIODIC_TASK_ID_FIELD,
-)
+from django.contrib.auth.models import User
+from django.forms import model_to_dict
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, JsonResponse
+from django.shortcuts import render
+from django_celery_beat.models import CrontabSchedule, PeriodicTask
+
 from Nudgie.chat.dialogue import load_conversation
 from Nudgie.scheduling.periodic_task_helper import get_periodic_task_data
+from Nudgie.time_utils.time import get_next_run_time_from_crontab, get_time, set_time
+
+from .chat.chatgpt import handle_convo
+from .constants import (
+    CELERY_BACKEND_CLEANUP_TASK,
+    CHATBOT_CONVERSATION_FIELD,
+    CHATBOT_TEMPLATE_NAME,
+    CHATBOT_TEMPLATE_SERVER_TIME_FIELD,
+    CHATBOT_TEMPLATE_TASKS_FIELD,
+    CHATBOT_URL_PATH,
+    CONVERSATION_FRAGMENT_CONVERSATION_FIELD,
+    CONVERSATION_FRAGMENT_TEMPLATE_NAME,
+    DIALOGUE_TYPE_DEADLINE,
+    DIALOGUE_TYPE_NUDGE,
+    DIALOGUE_TYPE_REMINDER,
+    MESSAGE_FIELD,
+    PERIODIC_TASK_ID_FIELD,
+    PERIODIC_TASK_NEXT_RUNTIME_FIELD,
+    PERIODIC_TASK_USER_ID,
+    POST,
+    QUEUE_NAME,
+    SEND_TYPE_ASSISTANT,
+    SENDER_MESSAGE,
+    TASKLIST_FRAGMENT_SERVER_TIME_FIELD,
+    TASKLIST_FRAGMENT_TASKS_FIELD,
+    TASKLIST_FRAGMENT_TEMPLATE_NAME,
+    TEST_FAST_FORWARD_SECONDS,
+    USER_INPUT_MESSAGE_FIELD,
+    UTF_8,
+)
+from .models import Conversation, Goal, MockedTime, NudgieTask
+from .tasks import deadline_handler, handle_nudge, handle_reminder
 
 
 def get_task_list_with_next_run(user: User):
@@ -110,10 +112,7 @@ def trigger_task(request: HttpRequest) -> HttpResponse:
 
     crontab = task_data.crontab
     fast_forward(
-        get_next_run_time_from_crontab(
-            crontab,
-            request.user,
-        ),
+        datetime.fromisoformat(task_data.next_run_time),
         request.user,
     )
 

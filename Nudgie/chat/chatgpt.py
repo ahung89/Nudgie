@@ -5,6 +5,7 @@ from typing import Optional
 import openai
 from django.contrib.auth.models import User
 from django.core.serializers import serialize
+from django.db.models import Min
 
 from Nudgie.chat.dialogue import load_conversation, save_line_of_speech
 from Nudgie.config.chatgpt_inputs import (
@@ -43,12 +44,15 @@ from Nudgie.constants import (
     DIALOGUE_TYPE_REMINDER,
     DIALOGUE_TYPE_SYSTEM_MESSAGE,
     DIALOGUE_TYPE_USER_INPUT,
+    NUDGIE_TASK_DUE_DATE_FIELD,
+    NUDGIE_TASK_TASK_NAME_FIELD,
     OPENAI_FUNCTIONS_FIELD,
     OPENAI_MESSAGE_FIELD,
     OPENAI_MODEL_FIELD,
     PENDING_TASKS_KEY,
     REMINDER_DATA_AI_STRUCT_KEY,
     TASK_IDENTIFICATION_CERTAINTY_SCORE,
+    TASK_IDENTIFICATION_NUDGIE_TASK_ID,
     TASK_IDENTIFICATION_REASONING,
 )
 from Nudgie.goals.goals import create_goal
@@ -58,7 +62,11 @@ from Nudgie.scheduling.scheduler import (
     schedule_goal_end,
     schedule_tasks_from_crontab_list,
 )
-from Nudgie.time_utils.time import date_to_crontab, get_time
+from Nudgie.time_utils.time import (
+    date_to_crontab,
+    get_next_run_time_from_crontab,
+    get_time,
+)
 
 # __name__ is the name of the current module, automatically set by Python.
 logger = logging.getLogger(__name__)
@@ -129,13 +137,16 @@ def handle_goal_creation(user: User, goal_name: str, goal_length_days: int) -> N
     goal = create_goal(
         user=user, goal_name=goal_name, goal_length_days=goal_length_days
     )
+    crontab = date_to_crontab(goal.goal_end_date)
 
     schedule_goal_end(
         TaskData(
-            crontab=date_to_crontab(goal.goal_end_date),
+            crontab=crontab,
+            task_name="",  # special case. we only need the goal-related data.
             user_id=user.id,
             goal_name=goal_name,
             due_date=goal.goal_end_date.isoformat(),
+            next_run_time=get_next_run_time_from_crontab(crontab, user).isoformat(),
             dialogue_type=DIALOGUE_TYPE_GOAL_END,
         )
     )
@@ -166,11 +177,11 @@ def handle_chatgpt_function_call(
         return call_openai_api(messages)
 
     elif function_name == CHATGPT_COMPLETE_TASK_FUNCTION:
-        certainty, identified_tasks, reasoning = identify_task(user.id, messages)
-        if certainty == 1 or len(identified_tasks) == 1:
+        certainty, identified_task, reasoning = identify_task(user.id, messages)
+        if certainty == 1:
             # log the data point
-            identified_tasks[0].completed = True
-            identified_tasks[0].save()
+            identified_task.completed = True
+            identified_task.save()
             generate_chat_gpt_message(
                 CHATGPT_USER_ROLE,
                 SUCCESSFUL_TASK_IDENTIFICATION_PROMPT,
@@ -413,6 +424,9 @@ def identify_task(user_id: str, messages: list) -> (float, list[NudgieTask]):
         due_date__gt=get_time(user),
     )
 
+    # If there are any tasks with the same task_name, remove whichever one has the greatest due_date.
+    tasks = remove_duplicate_tasks(tasks)
+
     # If there's only one task, there's no need to perform complex task identification.
     if tasks.count() == 1:
         print("only one task, skipping chatGPT task identification task query")
@@ -438,6 +452,30 @@ def identify_task(user_id: str, messages: list) -> (float, list[NudgieTask]):
 
     return (
         identification_result[TASK_IDENTIFICATION_CERTAINTY_SCORE],
-        tasks,
+        next(
+            (
+                task
+                for task in tasks
+                if task.id == identification_result[TASK_IDENTIFICATION_NUDGIE_TASK_ID]
+            ),
+            None,
+        ),
         identification_result[TASK_IDENTIFICATION_REASONING],
     )
+
+
+def remove_duplicate_tasks(tasks):
+    # Annotate each task_name with the earliest due_date
+    min_dates = tasks.values(NUDGIE_TASK_TASK_NAME_FIELD).annotate(
+        min_due_date=Min(NUDGIE_TASK_DUE_DATE_FIELD)
+    )
+
+    task_ids_to_keep = []
+
+    for item in min_dates:
+        task = tasks.get(
+            task_name=item[NUDGIE_TASK_TASK_NAME_FIELD], due_date=item["min_due_date"]
+        )
+        task_ids_to_keep.append(task.id)
+
+    return tasks.filter(id__in=task_ids_to_keep)

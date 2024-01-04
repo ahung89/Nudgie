@@ -1,33 +1,32 @@
-from celery import shared_task
+from datetime import datetime, timedelta
 
-from Nudgie.scheduling.scheduler import (
-    schedule_nudge,
-)
+from celery import shared_task
+from django.contrib.auth.models import User
+from django_celery_beat.models import PeriodicTask
+
 from Nudgie.chat.chatgpt import (
+    generate_and_send_deadline,
     generate_and_send_nudge,
     generate_and_send_reminder,
-    generate_and_send_deadline,
 )
+from Nudgie.scheduling.scheduler import schedule_nudge, schedule_nudgie_task
 from Nudgie.time_utils.time import (
-    get_time,
     calculate_due_date_from_crontab,
     get_next_run_time_from_crontab,
+    get_time,
 )
-from .models import NudgieTask
-from .scheduling.periodic_task_helper import (
-    get_periodic_task_data,
-    modify_periodic_task,
-    TaskData,
-)
+
 from .constants import (
     MAX_NUDGES_PER_REMINDER,
     MIN_MINUTES_BETWEEN_NUDGES,
     MIN_TIME_BETWEEN_LAST_NUDGE_AND_DUE_DATE,
 )
-from django.contrib.auth.models import User
-from django_celery_beat.models import PeriodicTask
-from datetime import timedelta, datetime
-
+from .models import NudgieTask
+from .scheduling.periodic_task_helper import (
+    TaskData,
+    get_periodic_task_data,
+    modify_periodic_task,
+)
 
 # for app.autodiscover_tasks() to work, you need to define a tasks.py file in each app.
 # that's why this file is here.
@@ -49,11 +48,10 @@ def get_nudgie_task(task_name: str, user_id: str, due_date: datetime) -> NudgieT
 def deactivate_nudge(
     task_name: str, user_id: int, due_date: datetime, periodic_task_id: int
 ) -> None:
-    """Deactivates a nudge by setting its completed field to True. Also deactivates the
-    periodic task associated with the nudge (because it's set to one-off, this will happen automatically
-    in production, so the explicit deactivation is just for the test tool)"""
-    get_nudgie_task(task_name, user_id, due_date).delete()
-
+    """Deactivates a nudge by deleting the periodic task associated with the nudge (because it's set
+    to one-off, this will happen automatically in production, so the explicit deactivation is just for
+    the test tool)
+    """
     PeriodicTask.objects.get(id=periodic_task_id).delete()
 
 
@@ -178,7 +176,7 @@ def handle_due_date_update(
 
     modify_periodic_task(periodic_task_id, task_data)
     # create a new NudgieTask for the next due date
-    schedule_nudge(task_data._replace(due_date=new_due_date.isoformat()))
+    schedule_nudgie_task(task_data._replace(due_date=new_due_date.isoformat()))
 
 
 @shared_task

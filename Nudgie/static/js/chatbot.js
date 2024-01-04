@@ -54,7 +54,7 @@ document.getElementById('test-button').addEventListener('click', function (event
         handleSubmit("NOCONF hi. i want to learn to cook. i want to practice MWF at 5 PM every week. I tend to be very tired "
             + "on Mondays because of work. On Wednesday I'll need a bit of a boost because the kids tend to "
             + "keep me busy you know? Also on these same days (MWF) at 7 AM I'd like to study cooking theory."
-            + "This will be a separate task from the cooking practice.");
+            + "This will be a separate task from the cooking practice. I'd like this to last for one month.");
 });
 
 document.addEventListener('DOMContentLoaded', function () {

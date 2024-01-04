@@ -138,7 +138,7 @@ ONGOING_CONVO_FUNCTIONS = [
                 }
             },
         },
-    },
+    }
     # {
     #     "name": "take_user_notes",
     #     "description": (
@@ -155,45 +155,6 @@ ONGOING_CONVO_FUNCTIONS = [
     #         "required": ["note"],
     #     },
     # },
-    {
-        "name": "register_task_completion",
-        "description": "Mark a task as completed.",
-        "parameters": {
-            "type": "object",
-            "description": "data needed to mark a task as completed.",
-            "properties": {
-                "user_id": {"type": "integer", "description": "the user's id"},
-                "task_name": {
-                    "type": "string",
-                    "description": "one-word ID identifying the task. e.g. for"
-                    " goal 'get_6_pack', the task name might be 'lift_weights'.",
-                },
-                "goal_name": {
-                    "type": "string",
-                    "description": "one-word ID identifying the goal.",
-                },
-                "reminder_time": {
-                    "type": "string",
-                    "description": "the date/time of the reminder in ISO 8601 format.",
-                },
-                "due_date": {
-                    "type": "string",
-                    "description": "the due date of the task in ISO 8601 format.",
-                },
-                "completed_on_time": {
-                    "type": "boolean",
-                    "description": "whether or not the task was completed on time.",
-                },
-                "notes": {
-                    "type": "string",
-                    "description": (
-                        "notes about the task completion. any relevant info,"
-                        "either told by the user or inferred by you"
-                    ),
-                },
-            },
-        },
-    },
 ]
 
 INITIAL_CONVO_FUNCTIONS = [

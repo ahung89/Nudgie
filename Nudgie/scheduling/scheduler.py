@@ -86,11 +86,7 @@ def schedule_nudge(task_data: TaskData):
 
 def schedule_goal_end(task_data: TaskData):
     """Schedule the event for when a goal's end date is reached."""
-    # task name is set to "" here because this is a special case. normally this object is used
-    # to pass data about a task, but in this case we only need the goal data.
-    new_task_data = task_data._replace(
-        dialogue_type=DIALOGUE_TYPE_GOAL_END, task_name=""
-    )
+    new_task_data = task_data._replace(dialogue_type=DIALOGUE_TYPE_GOAL_END)
     schedule_periodic_task(
         task_data=new_task_data, celery_task=GOAL_END_HANDLER, one_off=True
     )
