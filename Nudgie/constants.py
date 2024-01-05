@@ -1,5 +1,7 @@
 QUEUE_NAME = "nudgie"
 
+CHAT_GPT_MODEL = "gpt-4"
+
 DIALOGUE_TYPE_REMINDER = "reminder"
 DIALOGUE_TYPE_NUDGE = "nudge"
 DIALOGUE_TYPE_DEADLINE = "deadline"

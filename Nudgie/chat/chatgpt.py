@@ -9,7 +9,6 @@ from django.db.models import Min
 
 from Nudgie.chat.dialogue import load_conversation, save_line_of_speech
 from Nudgie.config.chatgpt_inputs import (
-    CHAT_GPT_MODEL,
     CLARIFICATION_PROMPT,
     DEADLINE_MISSED_PROMPT,
     GOAL_COMPLETION_FRAGMENT,
@@ -23,6 +22,7 @@ from Nudgie.config.chatgpt_inputs import (
     TASK_IDENTIFICATION_PROMPT,
 )
 from Nudgie.constants import (
+    CHAT_GPT_MODEL,
     CHATGPT_ASSISTANT_ROLE,
     CHATGPT_COMPLETE_TASK_FUNCTION,
     CHATGPT_CONTENT_KEY,
@@ -50,13 +50,12 @@ from Nudgie.constants import (
     OPENAI_MESSAGE_FIELD,
     OPENAI_MODEL_FIELD,
     PENDING_TASKS_KEY,
-    REMINDER_DATA_AI_STRUCT_KEY,
     TASK_IDENTIFICATION_CERTAINTY_SCORE,
     TASK_IDENTIFICATION_NUDGIE_TASK_ID,
     TASK_IDENTIFICATION_REASONING,
 )
 from Nudgie.goals.goals import create_goal
-from Nudgie.models import Goal, NudgieTask
+from Nudgie.models import NudgieTask
 from Nudgie.scheduling.periodic_task_helper import TaskData
 from Nudgie.scheduling.scheduler import (
     schedule_goal_end,
