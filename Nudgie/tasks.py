@@ -126,6 +126,7 @@ def deadline_handler(periodic_task_id) -> None:
     if not nudgie_task.completed:
         print("task incomplete, sending deadline notification")
         generate_and_send_deadline(task_data)
+        # TODO: log datapoint or otherwise make it visible in the UI that the user missed the deadline
 
     # Deactivate the task. Only necessary when manually triggering for testing, in production
     # the one-off switch should take care of this.

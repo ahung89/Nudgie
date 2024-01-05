@@ -1,9 +1,11 @@
 import json
 import logging
+from types import SimpleNamespace
 from typing import Optional
 
 import openai
 from django.contrib.auth.models import User
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.serializers import serialize
 from django.db.models import Min
 
@@ -27,6 +29,7 @@ from Nudgie.constants import (
     CHATGPT_COMPLETE_TASK_FUNCTION,
     CHATGPT_CONTENT_KEY,
     CHATGPT_DEFAULT_FUNCTION_SUCCESS_MESSAGE,
+    CHATGPT_FUNCTION_ARGUMENTS_KEY,
     CHATGPT_FUNCTION_CALL_KEY,
     CHATGPT_FUNCTION_NAME_KEY,
     CHATGPT_FUNCTION_ROLE,
@@ -55,7 +58,7 @@ from Nudgie.constants import (
     TASK_IDENTIFICATION_REASONING,
 )
 from Nudgie.goals.goals import create_goal
-from Nudgie.models import NudgieTask
+from Nudgie.models import CachedApiResponse, Goal, NudgieTask
 from Nudgie.scheduling.periodic_task_helper import TaskData
 from Nudgie.scheduling.scheduler import (
     schedule_goal_end,
@@ -205,7 +208,9 @@ def handle_chatgpt_function_call(
         raise NotImplementedError(f"Function {function_name} is not implemented.")
 
 
-def call_openai_api(messages: list[str], functions: Optional[list] = None):
+def call_openai_api(
+    messages: list[str], functions: Optional[list] = None, ignore_cache: bool = False
+):
     """
     Calls the OpenAI API and returns the response.
     """
@@ -213,11 +218,66 @@ def call_openai_api(messages: list[str], functions: Optional[list] = None):
     if functions is not None:
         args[OPENAI_FUNCTIONS_FIELD] = functions
 
-    response = client.chat.completions.create(**args)
-    return response.choices[0].message
+    args_json = json.dumps(args, sort_keys=True)
+
+    if not ignore_cache:
+        try:
+            # Check if the request is already cached
+            cached_response = CachedApiResponse.objects.get(request_params=args_json)
+            print("Cache hit for OpenAI request, skipping API call")
+            return deserialize_response_data(json.loads(cached_response.response))
+        except ObjectDoesNotExist:
+            print("OpenAI response cache miss, calling API")
+            pass
+
+    api_response = client.chat.completions.create(**args)
+
+    # Generate cached object
+    response_data = get_serializable_response_data(api_response)
+
+    # Cache the response
+    response_json = json.dumps(response_data)
+    CachedApiResponse.objects.create(request_params=args_json, response=response_json)
+
+    return deserialize_response_data(response_data)
 
 
-def generate_reminder_text(task_data: TaskData) -> str:
+def deserialize_response_data(serialized_response_data):
+    """
+    This deserializes the response data so that it can be treated in the exact same way as
+    the original API response.
+    """
+    if CHATGPT_FUNCTION_CALL_KEY in serialized_response_data:
+        function_call = SimpleNamespace(
+            **serialized_response_data[CHATGPT_FUNCTION_CALL_KEY]
+        )
+        serialized_response_data[CHATGPT_FUNCTION_CALL_KEY] = function_call
+    return SimpleNamespace(**serialized_response_data)
+
+
+def get_serializable_response_data(api_response):
+    """
+    This serializes the API response so that it can be cached. It preserves necessary fields so that
+    the calling code can treat it in the exact same way as the original API response.
+    """
+    api_response_msg = api_response.choices[0].message
+
+    response_data = {
+        CHATGPT_CONTENT_KEY: api_response_msg.content,
+    }
+    if has_function_call(api_response_msg):
+        response_data[CHATGPT_FUNCTION_CALL_KEY] = {
+            CHATGPT_FUNCTION_NAME_KEY: api_response_msg.function_call.name,
+            CHATGPT_FUNCTION_ARGUMENTS_KEY: api_response_msg.function_call.arguments,
+        }
+
+    return response_data
+
+
+def generate_reminder_prompt(task_data: TaskData) -> str:
+    """
+    Generates the prompt for the AI to generate a reminder.
+    """
     return REMINDER_PROMPT.format(
         task_name=task_data.task_name,
         goal_name=task_data.goal_name,
@@ -226,7 +286,10 @@ def generate_reminder_text(task_data: TaskData) -> str:
     )
 
 
-def generate_deadline_missed_text(task_data: TaskData) -> str:
+def generate_deadline_missed_prompt(task_data: TaskData) -> str:
+    """
+    Generates the prompt for the AI to generate a deadline missed message.
+    """
     return DEADLINE_MISSED_PROMPT.format(
         current_time=get_time(User.objects.get(id=task_data.user_id)).isoformat(),
         due_date=task_data.due_date,
@@ -267,7 +330,7 @@ def generate_and_send_reminder(user: User, task_data: TaskData) -> None:
     Prompts ChatGPT to generate a reminder, then sends the reminder to the user.
     """
     generate_and_send_message_to_user(
-        user, generate_reminder_text(task_data), DIALOGUE_TYPE_REMINDER
+        user, generate_reminder_prompt(task_data), DIALOGUE_TYPE_REMINDER
     )
 
 
@@ -284,14 +347,14 @@ def generate_and_send_deadline(task_data: TaskData) -> None:
     """
     generate_and_send_message_to_user(
         User.objects.get(id=task_data.user_id),
-        generate_deadline_missed_text(task_data),
+        generate_deadline_missed_prompt(task_data),
         DIALOGUE_TYPE_DEADLINE,
     )
 
 
-def prepare_api_message(messages: list, has_nudgie_tasks: bool) -> list:
+def add_system_message(messages: list, has_nudgie_tasks: bool) -> list:
     """
-    Prepares the messages to send to the OpenAI API.
+    Prepends the system message to the message list.
     """
     api_messages = [
         get_system_message_standard()
@@ -327,7 +390,7 @@ def handle_convo(
 
     has_nudgie_tasks = NudgieTask.objects.filter(user=user).exists()
 
-    api_messages = prepare_api_message(messages, has_nudgie_tasks)
+    api_messages = add_system_message(messages, has_nudgie_tasks)
 
     response = call_openai_api(api_messages, get_functions(has_nudgie_tasks))
 
@@ -368,13 +431,18 @@ def get_system_message_for_initial_convo():
     )
 
 
-def get_decorated_system_message(message: str) -> str:
+def decorate_system_message_with_goals(message: str) -> str:
     """
     Decorates the system message with a goal completion fragment if any goals have been completed by
-    the user in the past.
+    the user in the past. This way, the AI can draw on knowledge of the user's performance on past goals
+    in order to make better-informed messages.
     """
 
-    user_has_completed_goals = True  # TODO: implement logic
+    user_has_completed_goals = Goal.objects.filter(
+        goal_end_date__lt=get_time()
+    ).exists()
+
+    print(f"{user_has_completed_goals=}")
 
     return (
         message

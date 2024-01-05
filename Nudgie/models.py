@@ -28,7 +28,6 @@ class Goal(models.Model):
     goal_name = models.CharField(max_length=100)
     goal_start_date = models.DateTimeField(auto_now_add=True)
     goal_end_date = models.DateTimeField(auto_now_add=False)
-    goal_completion_date = models.DateTimeField(auto_now_add=False, null=True)
 
     def __str__(self):
         return f"{self.goal_name=} {self.goal_start_date=} {self.goal_end_date=}"
@@ -53,3 +52,10 @@ class MockedTime(models.Model):
         User, related_name="mocked_times", on_delete=models.CASCADE
     )
     mocked_time = models.DateTimeField()
+
+
+class CachedApiResponse(models.Model):
+    # This is a model for caching the openAI API responses. Right now the API is quite slow, so
+    # this should significantly speed up the development process.
+    request_params = models.JSONField()
+    response = models.JSONField()
