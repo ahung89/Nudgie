@@ -15,7 +15,7 @@ class Conversation(models.Model):
     message_type = models.CharField(
         max_length=20, choices=[("user", "User"), ("assistant", "Assistant")]
     )
-    content = models.TextField(blank=True)
+    content = models.TextField(blank=True, null=True)
     timestamp = models.DateTimeField(auto_now_add=True)
     dialogue_type = models.TextField(default="standard")
 

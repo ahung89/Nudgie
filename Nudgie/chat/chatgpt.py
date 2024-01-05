@@ -314,7 +314,9 @@ def generate_and_send_message_to_user(
     )
 
     # Generate, package, and send the response.
-    response_text = call_openai_api([get_system_message_standard(), *messages]).content
+    response_text = call_openai_api(
+        [get_system_message_standard(user), *messages]
+    ).content
     generate_chat_gpt_message(
         role=CHATGPT_ASSISTANT_ROLE,
         content=response_text,
@@ -352,14 +354,14 @@ def generate_and_send_deadline(task_data: TaskData) -> None:
     )
 
 
-def add_system_message(messages: list, has_nudgie_tasks: bool) -> list:
+def add_system_message(messages: list, has_nudgie_tasks: bool, user: User) -> list:
     """
     Prepends the system message to the message list.
     """
     api_messages = [
-        get_system_message_standard()
+        get_system_message_standard(user)
         if has_nudgie_tasks
-        else get_system_message_for_initial_convo()
+        else get_system_message_for_initial_convo(user)
     ]
     api_messages.extend(messages)
 
@@ -390,7 +392,7 @@ def handle_convo(
 
     has_nudgie_tasks = NudgieTask.objects.filter(user=user).exists()
 
-    api_messages = add_system_message(messages, has_nudgie_tasks)
+    api_messages = add_system_message(messages, has_nudgie_tasks, user)
 
     response = call_openai_api(api_messages, get_functions(has_nudgie_tasks))
 
@@ -417,21 +419,21 @@ def handle_convo(
     return response_text
 
 
-def get_system_message_for_initial_convo():
+def get_system_message_for_initial_convo(user: User):
     """
     Generates a base message array which contains the system prompt for the goal
     creation conversation
     """
     return generate_chat_gpt_message(
         CHATGPT_SYSTEM_ROLE,
-        INITIAL_CONVO_SYSTEM_PROMPT,
+        decorate_system_prompt_with_goals(INITIAL_CONVO_SYSTEM_PROMPT, user),
         None,
         DIALOGUE_TYPE_SYSTEM_MESSAGE,
         False,
     )
 
 
-def decorate_system_message_with_goals(message: str) -> str:
+def decorate_system_prompt_with_goals(message: str, user: User) -> str:
     """
     Decorates the system message with a goal completion fragment if any goals have been completed by
     the user in the past. This way, the AI can draw on knowledge of the user's performance on past goals
@@ -439,7 +441,7 @@ def decorate_system_message_with_goals(message: str) -> str:
     """
 
     user_has_completed_goals = Goal.objects.filter(
-        goal_end_date__lt=get_time()
+        goal_end_date__lt=get_time(user)
     ).exists()
 
     print(f"{user_has_completed_goals=}")
@@ -451,14 +453,14 @@ def decorate_system_message_with_goals(message: str) -> str:
     )
 
 
-def get_system_message_standard():
+def get_system_message_standard(user: User):
     """
     Generates a base message array which contains the system prompt for all
     behavior outside of the goal creation conversation.
     """
     return generate_chat_gpt_message(
         CHATGPT_SYSTEM_ROLE,
-        STANDARD_SYSTEM_PROMPT,
+        decorate_system_prompt_with_goals(STANDARD_SYSTEM_PROMPT, user),
         None,
         DIALOGUE_TYPE_SYSTEM_MESSAGE,
         False,
