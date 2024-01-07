@@ -1,10 +1,12 @@
-from croniter import croniter
 from datetime import datetime
+
+import pytz
+from croniter import croniter
 from django.contrib.auth.models import User
+from django_celery_beat.models import CrontabSchedule
+
 from Nudgie.constants import TIMEZONE_UTC
 from Nudgie.models import MockedTime
-from django_celery_beat.models import CrontabSchedule
-import pytz
 
 TESTING = True
 
@@ -21,7 +23,7 @@ def get_time(user: User) -> datetime:
             mocked_time_obj = MockedTime.objects.get(user=user)
         except MockedTime.DoesNotExist:
             # Time hasn't been mocked yet - returning actual time.
-            return localize(datetime.now())
+            return localize(datetime.datetime(2024, 1, 5, 7, 0, 0))
 
         return mocked_time_obj.mocked_time
     else:

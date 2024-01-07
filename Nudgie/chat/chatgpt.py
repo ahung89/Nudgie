@@ -8,6 +8,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.serializers import serialize
 from django.db.models import Min
+from httpx import get
 
 from Nudgie.chat.dialogue import load_conversation, save_line_of_speech
 from Nudgie.config.chatgpt_inputs import (
@@ -22,6 +23,7 @@ from Nudgie.config.chatgpt_inputs import (
     STANDARD_SYSTEM_PROMPT,
     SUCCESSFUL_TASK_IDENTIFICATION_PROMPT,
     TASK_IDENTIFICATION_PROMPT,
+    TIME_REMAINING_FRAGMENT,
 )
 from Nudgie.constants import (
     CHAT_GPT_MODEL,
@@ -47,6 +49,7 @@ from Nudgie.constants import (
     DIALOGUE_TYPE_REMINDER,
     DIALOGUE_TYPE_SYSTEM_MESSAGE,
     DIALOGUE_TYPE_USER_INPUT,
+    GOAL_END_DATE_FIELD,
     NUDGIE_TASK_DUE_DATE_FIELD,
     NUDGIE_TASK_TASK_NAME_FIELD,
     OPENAI_FUNCTIONS_FIELD,
@@ -74,6 +77,56 @@ from Nudgie.time_utils.time import (
 logger = logging.getLogger(__name__)
 client = openai.OpenAI()
 
+
+def add_goal_completion_info(func) :
+    """
+    Decorates the system message with a goal completion fragment if any goals have been completed by
+    the user in the past. This way, the AI can draw on knowledge of the user's performance on past goals
+    in order to make better-informed messages.
+    """
+    def wrapper(user: User) -> str:
+        message = func(user)
+        user_has_completed_goals = Goal.objects.filter(
+            goal_end_date__lt=get_time(user)
+        ).exists()
+
+        print(f"{user_has_completed_goals=}")
+
+        return (
+            message
+            if not user_has_completed_goals
+            else f"{message}\n\n{GOAL_COMPLETION_FRAGMENT.format(GOAL_LIST='', SUMMARY_OF_GOALS='')}"
+        )
+    return wrapper
+
+
+def append_remaining_time_info(func) :
+    """
+    Pulls the upcoming goal from the DB and checks how much time remains between now and the goal's end date. Then
+    appends this to the message by setting the appropriate fields (goal_end_date, current_time, hours_remaining, minutes_remaining,
+    and seconds_remaining) on the TIME_REMAINING_FRAGMENT template string.
+    """
+    def wrapper(user: User) -> str:
+        message = func(user)
+        curr_time = get_time(user)
+
+        goal = Goal.objects.filter(goal_end_date__gt=curr_time).order_by(GOAL_END_DATE_FIELD).first()
+
+        remaining_time = goal.goal_end_date - curr_time
+        days = remaining_time.days
+        hours, remainder = divmod(remaining_time.seconds, 3600)
+        minutes, seconds = divmod(remainder, 60)
+
+        return f"{message}\n\n{TIME_REMAINING_FRAGMENT.format(
+            TIME_REMAINING_FRAGMENT_GOAL_END=goal.goal_end_date.isoformat(),
+            TIME_REMAINING_FRAGMENT_CURRENT_TIME=get_time(user).isoformat(),
+            TIME_REMAINING_FRAGMENT_DAYS_REMAINING=days,
+            TIME_REMAINING_FRAGMENT_HOURS_REMAINING=hours,
+            TIME_REMAINING_FRAGMENT_MINUTES_REMAINING=minutes,
+            TIME_REMAINING_FRAGMENT_SECONDS_REMAINING=seconds
+        )}"
+    
+    return wrapper
 
 def has_function_call(response) -> bool:
     """
@@ -426,31 +479,26 @@ def get_system_message_for_initial_convo(user: User):
     """
     return generate_chat_gpt_message(
         CHATGPT_SYSTEM_ROLE,
-        decorate_system_prompt_with_goals(INITIAL_CONVO_SYSTEM_PROMPT, user),
+        get_initial_system_prompt(user),
         None,
         DIALOGUE_TYPE_SYSTEM_MESSAGE,
         False,
     )
 
-
-def decorate_system_prompt_with_goals(message: str, user: User) -> str:
+@add_goal_completion_info
+@append_remaining_time_info
+def get_standard_system_prompt(user: User) -> str:
     """
-    Decorates the system message with a goal completion fragment if any goals have been completed by
-    the user in the past. This way, the AI can draw on knowledge of the user's performance on past goals
-    in order to make better-informed messages.
+    Get the system prompt for all behavior outside of the goal creation conversation.
     """
+    return STANDARD_SYSTEM_PROMPT
 
-    user_has_completed_goals = Goal.objects.filter(
-        goal_end_date__lt=get_time(user)
-    ).exists()
-
-    print(f"{user_has_completed_goals=}")
-
-    return (
-        message
-        if not user_has_completed_goals
-        else f"{message}\n\n{GOAL_COMPLETION_FRAGMENT.format(GOAL_LIST='', SUMMARY_OF_GOALS='')}"
-    )
+@add_goal_completion_info
+def get_initial_system_prompt(user: User) -> str:
+    """
+    Get the system prompt for the goal creation conversation.
+    """
+    return INITIAL_CONVO_SYSTEM_PROMPT
 
 
 def get_system_message_standard(user: User):
@@ -458,9 +506,10 @@ def get_system_message_standard(user: User):
     Generates a base message array which contains the system prompt for all
     behavior outside of the goal creation conversation.
     """
+
     return generate_chat_gpt_message(
         CHATGPT_SYSTEM_ROLE,
-        decorate_system_prompt_with_goals(STANDARD_SYSTEM_PROMPT, user),
+        get_standard_system_prompt(user),
         None,
         DIALOGUE_TYPE_SYSTEM_MESSAGE,
         False,
