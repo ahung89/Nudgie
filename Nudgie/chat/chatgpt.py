@@ -11,6 +11,10 @@ from django.db.models import Min
 from httpx import get
 
 from Nudgie.chat.dialogue import load_conversation, save_line_of_speech
+from Nudgie.chat.system_prompt import (
+    get_initial_system_prompt,
+    get_standard_system_prompt,
+)
 from Nudgie.config.chatgpt_inputs import (
     CLARIFICATION_PROMPT,
     DEADLINE_MISSED_PROMPT,
@@ -78,56 +82,6 @@ logger = logging.getLogger(__name__)
 client = openai.OpenAI()
 
 
-def add_goal_completion_info(func) :
-    """
-    Decorates the system message with a goal completion fragment if any goals have been completed by
-    the user in the past. This way, the AI can draw on knowledge of the user's performance on past goals
-    in order to make better-informed messages.
-    """
-    def wrapper(user: User) -> str:
-        message = func(user)
-        user_has_completed_goals = Goal.objects.filter(
-            goal_end_date__lt=get_time(user)
-        ).exists()
-
-        print(f"{user_has_completed_goals=}")
-
-        return (
-            message
-            if not user_has_completed_goals
-            else f"{message}\n\n{GOAL_COMPLETION_FRAGMENT.format(GOAL_LIST='', SUMMARY_OF_GOALS='')}"
-        )
-    return wrapper
-
-
-def append_remaining_time_info(func) :
-    """
-    Pulls the upcoming goal from the DB and checks how much time remains between now and the goal's end date. Then
-    appends this to the message by setting the appropriate fields (goal_end_date, current_time, hours_remaining, minutes_remaining,
-    and seconds_remaining) on the TIME_REMAINING_FRAGMENT template string.
-    """
-    def wrapper(user: User) -> str:
-        message = func(user)
-        curr_time = get_time(user)
-
-        goal = Goal.objects.filter(goal_end_date__gt=curr_time).order_by(GOAL_END_DATE_FIELD).first()
-
-        remaining_time = goal.goal_end_date - curr_time
-        days = remaining_time.days
-        hours, remainder = divmod(remaining_time.seconds, 3600)
-        minutes, seconds = divmod(remainder, 60)
-
-        return f"{message}\n\n{TIME_REMAINING_FRAGMENT.format(
-            goal_end_date=goal.goal_end_date.isoformat(),
-            current_time=get_time(user).isoformat(),
-            days_remaining=days,
-            hours_remaining=hours,
-            minutes_remaining=minutes,
-            seconds_remaining=seconds
-        )}"
-    
-    return wrapper
-
 def has_function_call(response) -> bool:
     """
     Determines whether the response from the OpenAI API contains a function call.
@@ -135,6 +89,35 @@ def has_function_call(response) -> bool:
     return (
         hasattr(response, CHATGPT_FUNCTION_CALL_KEY)
         and response.function_call is not None
+    )
+
+
+def get_system_message_for_initial_convo(user: User):
+    """
+    Generates a base message array which contains the system prompt for the goal
+    creation conversation
+    """
+    return generate_chat_gpt_message(
+        CHATGPT_SYSTEM_ROLE,
+        get_initial_system_prompt(user),
+        None,
+        DIALOGUE_TYPE_SYSTEM_MESSAGE,
+        False,
+    )
+
+
+def get_system_message_standard(user: User):
+    """
+    Generates a base message array which contains the system prompt for all
+    behavior outside of the goal creation conversation.
+    """
+
+    return generate_chat_gpt_message(
+        CHATGPT_SYSTEM_ROLE,
+        get_standard_system_prompt(user),
+        None,
+        DIALOGUE_TYPE_SYSTEM_MESSAGE,
+        False,
     )
 
 
@@ -470,50 +453,6 @@ def handle_convo(
     )
 
     return response_text
-
-
-def get_system_message_for_initial_convo(user: User):
-    """
-    Generates a base message array which contains the system prompt for the goal
-    creation conversation
-    """
-    return generate_chat_gpt_message(
-        CHATGPT_SYSTEM_ROLE,
-        get_initial_system_prompt(user),
-        None,
-        DIALOGUE_TYPE_SYSTEM_MESSAGE,
-        False,
-    )
-
-@add_goal_completion_info
-@append_remaining_time_info
-def get_standard_system_prompt(user: User) -> str:
-    """
-    Get the system prompt for all behavior outside of the goal creation conversation.
-    """
-    return STANDARD_SYSTEM_PROMPT
-
-@add_goal_completion_info
-def get_initial_system_prompt(user: User) -> str:
-    """
-    Get the system prompt for the goal creation conversation.
-    """
-    return INITIAL_CONVO_SYSTEM_PROMPT
-
-
-def get_system_message_standard(user: User):
-    """
-    Generates a base message array which contains the system prompt for all
-    behavior outside of the goal creation conversation.
-    """
-
-    return generate_chat_gpt_message(
-        CHATGPT_SYSTEM_ROLE,
-        get_standard_system_prompt(user),
-        None,
-        DIALOGUE_TYPE_SYSTEM_MESSAGE,
-        False,
-    )
 
 
 def get_task_identification_message(
