@@ -118,12 +118,12 @@ def append_remaining_time_info(func) :
         minutes, seconds = divmod(remainder, 60)
 
         return f"{message}\n\n{TIME_REMAINING_FRAGMENT.format(
-            TIME_REMAINING_FRAGMENT_GOAL_END=goal.goal_end_date.isoformat(),
-            TIME_REMAINING_FRAGMENT_CURRENT_TIME=get_time(user).isoformat(),
-            TIME_REMAINING_FRAGMENT_DAYS_REMAINING=days,
-            TIME_REMAINING_FRAGMENT_HOURS_REMAINING=hours,
-            TIME_REMAINING_FRAGMENT_MINUTES_REMAINING=minutes,
-            TIME_REMAINING_FRAGMENT_SECONDS_REMAINING=seconds
+            goal_end_date=goal.goal_end_date.isoformat(),
+            current_time=get_time(user).isoformat(),
+            days_remaining=days,
+            hours_remaining=hours,
+            minutes_remaining=minutes,
+            seconds_remaining=seconds
         )}"
     
     return wrapper

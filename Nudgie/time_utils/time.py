@@ -23,7 +23,7 @@ def get_time(user: User) -> datetime:
             mocked_time_obj = MockedTime.objects.get(user=user)
         except MockedTime.DoesNotExist:
             # Time hasn't been mocked yet - returning actual time.
-            return localize(datetime.datetime(2024, 1, 5, 7, 0, 0))
+            return localize(datetime(2024, 1, 5, 7, 0, 0))
 
         return mocked_time_obj.mocked_time
     else:

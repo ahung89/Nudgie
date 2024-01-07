@@ -123,7 +123,7 @@ at any point when crafting your message if you deem it to be helpful or motivati
 
 TIME_REMAINING_FRAGMENT = """Also, remember that the end date of the goal is {goal_end_date}. The current time is {current_time}. The user has
 exactly {days_remaining} days, {hours_remaining} hours, {minutes_remaining} minutes, and {seconds_remaining} seconds remaining to complete the goal. Make sure to mention
-this in your response. This is critical.
+this in every single response (reminders, nudges, etc). You must not forget this even once!
 """
 
 ONGOING_CONVO_FUNCTIONS = [
