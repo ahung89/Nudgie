@@ -28,6 +28,8 @@ class Goal(models.Model):
     goal_name = models.CharField(max_length=100)
     goal_start_date = models.DateTimeField(auto_now_add=True)
     goal_end_date = models.DateTimeField(auto_now_add=False)
+    completed = models.BooleanField(default=False)
+    failed = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.goal_name=} {self.goal_start_date=} {self.goal_end_date=}"

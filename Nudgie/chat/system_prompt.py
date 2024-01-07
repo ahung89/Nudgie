@@ -3,6 +3,7 @@ This file handles all functionality related to designing the AI's system prompt.
 """
 
 from django.contrib.auth.models import User
+from httpx import get
 
 from Nudgie.config.chatgpt_inputs import (
     GOAL_COMPLETION_FRAGMENT,
@@ -11,6 +12,7 @@ from Nudgie.config.chatgpt_inputs import (
     TIME_REMAINING_FRAGMENT,
 )
 from Nudgie.constants import GOAL_END_DATE_FIELD
+from Nudgie.goals.goals import get_current_goal
 from Nudgie.models import Goal
 from Nudgie.time_utils.time import get_time
 
@@ -47,7 +49,7 @@ def append_remaining_time_info(func) :
         message = func(user)
         curr_time = get_time(user)
 
-        goal = Goal.objects.filter(goal_end_date__gt=curr_time).order_by(GOAL_END_DATE_FIELD).first()
+        goal = get_current_goal(user)
 
         remaining_time = goal.goal_end_date - curr_time
         days = remaining_time.days

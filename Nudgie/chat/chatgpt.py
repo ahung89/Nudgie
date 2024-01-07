@@ -64,7 +64,7 @@ from Nudgie.constants import (
     TASK_IDENTIFICATION_NUDGIE_TASK_ID,
     TASK_IDENTIFICATION_REASONING,
 )
-from Nudgie.goals.goals import create_goal
+from Nudgie.goals.goals import create_goal, get_current_goal
 from Nudgie.models import CachedApiResponse, Goal, NudgieTask
 from Nudgie.scheduling.periodic_task_helper import TaskData
 from Nudgie.scheduling.scheduler import (
@@ -426,11 +426,11 @@ def handle_convo(
         CHATGPT_USER_ROLE, prompt, user, DIALOGUE_TYPE_USER_INPUT, True, messages
     )
 
-    has_nudgie_tasks = NudgieTask.objects.filter(user=user).exists()
+    should_enter_goal_setup_convo = not get_current_goal(user).exists()
 
-    api_messages = add_system_message(messages, has_nudgie_tasks, user)
+    api_messages = add_system_message(messages, should_enter_goal_setup_convo, user)
 
-    response = call_openai_api(api_messages, get_functions(has_nudgie_tasks))
+    response = call_openai_api(api_messages, get_functions(should_enter_goal_setup_convo))
 
     # Handle function call, if necessary
     if has_function_call(response):

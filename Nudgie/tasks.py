@@ -45,9 +45,7 @@ def get_nudgie_task(task_name: str, user_id: str, due_date: datetime) -> NudgieT
     return filtered_tasks[0]
 
 
-def deactivate_nudge(
-    task_name: str, user_id: int, due_date: datetime, periodic_task_id: int
-) -> None:
+def deactivate_nudge(periodic_task_id: int) -> None:
     """Deactivates a nudge by deleting the periodic task associated with the nudge (because it's set
     to one-off, this will happen automatically in production, so the explicit deactivation is just for
     the test tool)
@@ -78,31 +76,13 @@ def handle_nudge(periodic_task_id) -> None:
         print("task incomplete, sending nudge")
         generate_and_send_nudge(User.objects.get(id=task_data.user_id))
 
-    deactivate_nudge(
-        task_data.task_name,
-        task_data.user_id,
-        datetime.fromisoformat(task_data.due_date),
-        periodic_task_id,
-    )
+    deactivate_nudge(periodic_task_id)
 
 
 @shared_task
 def goal_end_handler(periodic_task_id) -> None:
     """
-    When a goal ends, Nudgie will generate a summary of the performance to display to the user. Also, it will set
-    all the necessary flags to clear the task.
-
-    Things that need to happen:
-    - reset the "state machine" from the ongoing convo state to the goal creation state, or
-    to another state that makes sense. right now the state machine is handled in prepare_api_message
-    via a simple if-else statement, but it might be better to specific state-machine-specific logic.
-        - this prompt will likely be a modified version of the initial prompt.
-    - generate performance summary and display to the user.
-    - unload any goal-related information that was being added to the message, e.g.
-    current goal name, goal start date, goal end date, etc.
-    - make sure that the goal completion fragment starts getting appended. might be good
-    to come up with some infrastructure for augmenting the original prompts, or for
-    augmenting what gets sent to the AI, in an easily trackable and manageable way.
+    When a goal ends, Nudgie will generate a summary of the performance to display to the user.
     """
     pass
 

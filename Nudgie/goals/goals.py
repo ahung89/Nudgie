@@ -1,7 +1,9 @@
+from datetime import timedelta
+
 from django.contrib.auth.models import User
+
 from Nudgie.models import Goal
 from Nudgie.time_utils.time import get_time
-from datetime import timedelta
 
 
 def create_goal(user: User, goal_name: str, goal_length_days: int) -> Goal:
@@ -17,3 +19,14 @@ def create_goal(user: User, goal_name: str, goal_length_days: int) -> Goal:
         goal_start_date=curr_time,
         goal_end_date=end_time,
     )
+
+
+def get_current_goal(user: User) -> Goal:
+    """Returns the current goal for the user."""
+    curr_time = get_time(user)
+    return Goal.objects.filter(
+        goal_start_date__lte=curr_time,
+        goal_end_date__gte=curr_time,
+        completed=False,
+        failed=False,
+    ).first()
