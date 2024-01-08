@@ -39,10 +39,10 @@ class Task(models.Model):
     goal = models.ForeignKey(
         Goal, related_name="tasks", on_delete=models.CASCADE, null=True
     )
-    task_name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100)
 
     class Meta:
-        unique_together = ["goal", "task_name"]
+        unique_together = ["goal", "name"]
 
 
 class NudgieTask(models.Model):
@@ -59,7 +59,7 @@ class NudgieTask(models.Model):
     completed = models.BooleanField(default=False)
 
     def __str__(self):
-        return f"{self.task_name=} {self.goal_name=} {self.due_date=} {self.completed=}"
+        return f"{self.task.name=} {self.goal.goal_name=} {self.due_date=} {self.completed=}"
 
 
 class MockedTime(models.Model):

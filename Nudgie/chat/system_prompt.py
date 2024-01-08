@@ -51,6 +51,9 @@ def append_remaining_time_info(func) :
 
         goal = get_current_goal(user)
 
+        if goal is None:
+            return message
+
         remaining_time = goal.goal_end_date - curr_time
         days = remaining_time.days
         hours, remainder = divmod(remaining_time.seconds, 3600)

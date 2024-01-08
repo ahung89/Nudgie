@@ -14,7 +14,7 @@ from Nudgie.constants import (
     QUEUE_NAME,
     REMINDER_HANDLER,
 )
-from Nudgie.models import NudgieTask, Task
+from Nudgie.models import Goal, NudgieTask, Task
 from Nudgie.scheduling.periodic_task_helper import (
     TaskData,
     convert_chatgpt_task_data_to_task_data,
@@ -40,17 +40,18 @@ def schedule_deadline_task(task_data: TaskData) -> None:
     schedule_periodic_task(task_data, DEADLINE_HANDLER, True)
 
 
-def schedule_nudgie_task(task_data: TaskData) -> None:
+def create_nudgie_task(task_data: TaskData) -> None:
     """Creates a NudgieTask, indicating an outstanding task. NudgieTasks are used as a source of truth as to which tasks
     are still pending completion, and which have been completed. Each time a NudgieTask is logged in the database, a new
     deadline job is also scheduled. This deadline job, when triggered, will notify the user that he failed to complete the
     task on time."""
     user = User.objects.get(id=task_data.user_id)
-    task = Task.objects.get(name=task_data.task_name, goal=task_data.goal_name)
+    goal = Goal.objects.get(goal_name=task_data.goal_name, user=user)
+    task = Task.objects.get(name=task_data.task_name, goal=goal)
     NudgieTask.objects.create(
         user=user,
         task=task,
-        goal_name=task_data.goal_name,
+        goal=goal,
         due_date=task_data.due_date,
     )
 
@@ -107,5 +108,5 @@ def schedule_tasks_from_crontab_list(crontab_list, goal_name, user):
     for notif in crontab_list:
         task_data = convert_chatgpt_task_data_to_task_data(notif, goal_name, user)
 
-        schedule_nudgie_task(task_data)
+        create_nudgie_task(task_data)
         schedule_reminder(task_data)

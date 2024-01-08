@@ -17,6 +17,7 @@
                 <input type="submit" value="Send"><input id="test-button" type="button" value="Default Test">
             </form>
             <a href="{% url 'reset_user_data' %}">Clear User Data</a>
+            <a href="{% url 'clear_cache' %}">Clear Cache</a>
             <br><br>
             <div id="conversation">
                 {% include 'conversation_fragment.html' %}

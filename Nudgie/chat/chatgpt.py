@@ -172,11 +172,12 @@ def generate_chatgpt_function_success_message(
     return message
 
 
-def handle_task_creation(crontab_list) -> None:
+def handle_task_creation(crontab_list, goal_name) -> None:
+    goal = Goal.objects.get(goal_name=goal_name)
     for schedule in crontab_list:
         Task.objects.create(
-            task_name=schedule[REMINDER_DATA_AI_STRUCT_KEY][TASK_NAME_AI_STRUCT_KEY],
-            goal=Goal.objects.get(name=schedule[GOAL_NAME_AI_STRUCT_KEY]),
+            name=schedule[REMINDER_DATA_AI_STRUCT_KEY][TASK_NAME_AI_STRUCT_KEY],
+            goal=goal,
         )
 
 
@@ -212,7 +213,9 @@ def handle_chatgpt_function_call(
             function_args[CHATGPT_GOAL_NAME_KEY],
             function_args[CHATGPT_GOAL_LENGTH_DAYS],
         )
-        handle_task_creation(function_args[CHATGPT_SCHEDULES_KEY])
+        handle_task_creation(
+            function_args[CHATGPT_SCHEDULES_KEY], function_args[CHATGPT_GOAL_NAME_KEY]
+        )
         schedule_tasks_from_crontab_list(
             function_args[CHATGPT_SCHEDULES_KEY],
             function_args[CHATGPT_GOAL_NAME_KEY],
@@ -401,13 +404,13 @@ def generate_and_send_deadline(task_data: TaskData) -> None:
     )
 
 
-def add_system_message(messages: list, has_nudgie_tasks: bool, user: User) -> list:
+def add_system_message(messages: list, initial_goal_convo: bool, user: User) -> list:
     """
     Prepends the system message to the message list.
     """
     api_messages = [
         get_system_message_standard(user)
-        if has_nudgie_tasks
+        if initial_goal_convo
         else get_system_message_for_initial_convo(user)
     ]
     api_messages.extend(messages)
@@ -415,11 +418,11 @@ def add_system_message(messages: list, has_nudgie_tasks: bool, user: User) -> li
     return api_messages
 
 
-def get_functions(has_nudgie_tasks: bool) -> str:
+def get_functions(initial_goal_convo: bool) -> str:
     """
     Selects the functions to pass to OpenAI.
     """
-    return ONGOING_CONVO_FUNCTIONS if has_nudgie_tasks else INITIAL_CONVO_FUNCTIONS
+    return INITIAL_CONVO_FUNCTIONS if initial_goal_convo else ONGOING_CONVO_FUNCTIONS
 
 
 def handle_convo(
@@ -437,13 +440,10 @@ def handle_convo(
         CHATGPT_USER_ROLE, prompt, user, DIALOGUE_TYPE_USER_INPUT, True, messages
     )
 
-    should_enter_goal_setup_convo = not get_current_goal(user).exists()
+    initial_goal_convo = get_current_goal(user) is None
+    api_messages = add_system_message(messages, initial_goal_convo, user)
 
-    api_messages = add_system_message(messages, should_enter_goal_setup_convo, user)
-
-    response = call_openai_api(
-        api_messages, get_functions(should_enter_goal_setup_convo)
-    )
+    response = call_openai_api(api_messages, get_functions(initial_goal_convo))
 
     # Handle function call, if necessary
     if has_function_call(response):
@@ -544,7 +544,7 @@ def remove_duplicate_tasks(tasks):
 
     for item in min_dates:
         task = tasks.get(
-            task_name=item[NUDGIE_TASK_TASK_NAME_FIELD], due_date=item["min_due_date"]
+            task__name=item[NUDGIE_TASK_TASK_NAME_FIELD], due_date=item["min_due_date"]
         )
         task_ids_to_keep.append(task.id)
 

@@ -9,7 +9,7 @@ from Nudgie.chat.chatgpt import (
     generate_and_send_nudge,
     generate_and_send_reminder,
 )
-from Nudgie.scheduling.scheduler import schedule_nudge, schedule_nudgie_task
+from Nudgie.scheduling.scheduler import create_nudgie_task, schedule_nudge
 from Nudgie.time_utils.time import (
     calculate_due_date_from_crontab,
     get_next_run_time_from_crontab,
@@ -37,7 +37,7 @@ from .scheduling.periodic_task_helper import (
 def get_nudgie_task(task_name: str, user_id: str, due_date: datetime) -> NudgieTask:
     """Queries DB for a single NudgieTask object."""
     filtered_tasks = NudgieTask.objects.filter(
-        task__task_name=task_name, user_id=user_id, due_date=due_date
+        task__name=task_name, user_id=user_id, due_date=due_date
     )
 
     assert len(filtered_tasks) == 1, f"expected 1 task, got {len(filtered_tasks)}"
@@ -157,7 +157,7 @@ def handle_due_date_update(
 
     modify_periodic_task(periodic_task_id, task_data)
     # create a new NudgieTask for the next due date
-    schedule_nudgie_task(task_data._replace(due_date=new_due_date.isoformat()))
+    create_nudgie_task(task_data._replace(due_date=new_due_date.isoformat()))
 
 
 @shared_task

@@ -39,7 +39,7 @@ from .constants import (
     USER_INPUT_MESSAGE_FIELD,
     UTF_8,
 )
-from .models import Conversation, Goal, MockedTime, NudgieTask
+from .models import CachedApiResponse, Conversation, Goal, MockedTime, NudgieTask
 from .tasks import deadline_handler, handle_nudge, handle_reminder
 
 
@@ -166,6 +166,13 @@ def reset_user_data(request):
     Goal.objects.filter(user=request.user).delete()
     CrontabSchedule.objects.exclude(periodictask__isnull=False).delete()
     MockedTime.objects.filter(user=request.user).delete()
+
+    return HttpResponseRedirect(CHATBOT_URL_PATH)
+
+
+def clear_cache(request):
+    """Clears all of the cached API responses."""
+    CachedApiResponse.objects.all().delete()
 
     return HttpResponseRedirect(CHATBOT_URL_PATH)
 
