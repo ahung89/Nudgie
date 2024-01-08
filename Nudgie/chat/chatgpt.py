@@ -19,6 +19,7 @@ from Nudgie.config.chatgpt_inputs import (
     CLARIFICATION_PROMPT,
     DEADLINE_MISSED_PROMPT,
     GOAL_COMPLETION_FRAGMENT,
+    GOAL_COMPLETION_PROMPT,
     INITIAL_CONVO_FUNCTIONS,
     INITIAL_CONVO_SYSTEM_PROMPT,
     NUDGE_PROMPT,
@@ -401,6 +402,21 @@ def generate_and_send_deadline(task_data: TaskData) -> None:
         User.objects.get(id=task_data.user_id),
         generate_deadline_missed_prompt(task_data),
         DIALOGUE_TYPE_DEADLINE,
+    )
+
+
+def generate_and_send_performance_summary(
+    user: User, goal_name: str, performance_data: str
+) -> None:
+    """
+    Prompts ChatGPT to generate a performance summary, then sends the summary to the user.
+    """
+    generate_and_send_message_to_user(
+        user,
+        GOAL_COMPLETION_PROMPT.format(
+            goal_name=goal_name, performance_data=performance_data
+        ),
+        DIALOGUE_TYPE_GOAL_END,
     )
 
 

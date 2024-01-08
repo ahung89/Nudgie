@@ -7,8 +7,10 @@ from django_celery_beat.models import PeriodicTask
 from Nudgie.chat.chatgpt import (
     generate_and_send_deadline,
     generate_and_send_nudge,
+    generate_and_send_performance_summary,
     generate_and_send_reminder,
 )
+from Nudgie.config.chatgpt_inputs import PERFORMANCE_DATA_TEMPLATE_FOR_ONE_TASK
 from Nudgie.scheduling.scheduler import create_nudgie_task, schedule_nudge
 from Nudgie.time_utils.time import (
     calculate_due_date_from_crontab,
@@ -21,7 +23,7 @@ from .constants import (
     MIN_MINUTES_BETWEEN_NUDGES,
     MIN_TIME_BETWEEN_LAST_NUDGE_AND_DUE_DATE,
 )
-from .models import NudgieTask
+from .models import Goal, NudgieTask, Task
 from .scheduling.periodic_task_helper import (
     TaskData,
     get_periodic_task_data,
@@ -82,9 +84,38 @@ def handle_nudge(periodic_task_id) -> None:
 @shared_task
 def goal_end_handler(periodic_task_id) -> None:
     """
-    When a goal ends, Nudgie will generate a summary of the performance to display to the user.
+    Calculates the performance data and sends a message to the user congratulating him and giving him
+    a breakdown of his performance on each task. Closes out the goal.
     """
-    pass
+    task_data = get_periodic_task_data(periodic_task_id)
+    goal_name = task_data.goal_name
+
+    goal = Goal.objects.get(goal_name=goal_name)
+    tasks = Task.objects.filter(goal=goal)
+
+    performance_data = ""
+    for task in tasks:
+        nudgie_tasks = NudgieTask.objects.filter(task=task)
+        completion_count = sum(
+            1 for nudgie_task in nudgie_tasks if nudgie_task.completed
+        )
+        completion_rate = str((completion_count / len(nudgie_tasks)) * 100) + "%"
+        performance_data += PERFORMANCE_DATA_TEMPLATE_FOR_ONE_TASK.format(
+            task_name=task.name,
+            num_completed=completion_count,
+            num_total=len(nudgie_tasks),
+            completion_rate=completion_rate,
+        )
+
+        print(
+            f"PERFORMANCE DATA DEBUG: {task.name} completed {completion_count} out of {len(nudgie_tasks)} tasks "
+            f"for a completion rate of {completion_rate}"
+        )
+
+    aggregated_data = performance_data
+    generate_and_send_performance_summary(
+        User.objects.get(id=task_data.user_id), goal_name, aggregated_data
+    )
 
 
 @shared_task

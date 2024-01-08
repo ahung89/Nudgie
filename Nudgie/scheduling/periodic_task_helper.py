@@ -48,6 +48,10 @@ class TaskData(NamedTuple):
 
 
 def modify_periodic_task(id: int, task_data: Optional[TaskData] = None):
+    """
+    Modifies a periodic task by updating the crontab and kwargs fields with the
+    values provided in task_data.
+    """
     task = PeriodicTask.objects.get(id=id)
     current_kwargs = json.loads(task.kwargs)
 

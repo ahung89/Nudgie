@@ -22,6 +22,7 @@ from .constants import (
     CONVERSATION_FRAGMENT_CONVERSATION_FIELD,
     CONVERSATION_FRAGMENT_TEMPLATE_NAME,
     DIALOGUE_TYPE_DEADLINE,
+    DIALOGUE_TYPE_GOAL_END,
     DIALOGUE_TYPE_NUDGE,
     DIALOGUE_TYPE_REMINDER,
     MESSAGE_FIELD,
@@ -40,7 +41,7 @@ from .constants import (
     UTF_8,
 )
 from .models import CachedApiResponse, Conversation, Goal, MockedTime, NudgieTask
-from .tasks import deadline_handler, handle_nudge, handle_reminder
+from .tasks import deadline_handler, goal_end_handler, handle_nudge, handle_reminder
 
 
 def get_task_list_with_next_run(user: User):
@@ -130,6 +131,11 @@ def trigger_task(request: HttpRequest) -> HttpResponse:
         ).get()
     elif task_data.dialogue_type == DIALOGUE_TYPE_DEADLINE:
         result = deadline_handler.apply_async(
+            args=(task_id,),
+            queue=QUEUE_NAME,
+        ).get()
+    elif task_data.dialogue_type == DIALOGUE_TYPE_GOAL_END:
+        result = goal_end_handler.apply_async(
             args=(task_id,),
             queue=QUEUE_NAME,
         ).get()

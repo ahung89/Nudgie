@@ -271,10 +271,9 @@ that he is intentionally trying to avoid clarifying, allow the subject change bu
 clarifies it adequately."""
 
 GOAL_COMPLETION_PROMPT = """[GOAL COMPLETION] You are to congratulate the user on completing his goal. You are to give a summary based on the user's
-performance data, which is shown below:
-{PERFORMANCE_DATA}
-Recall the initial parameters of the task, which were
-{INITIAL_PARAMETERS}
+performance data for the goal {goal_name}, which is shown below:
+{performance_data}
+
 Keep the message positive - even if the user missed some tasks, the fact that the user reached this point means that he was above the failure threshold
 and therefore was successful. Make sure to personalize the message based on the nature of the goal, but also mention how completing this task has strengthened
 the user's ability to complete future goals.
