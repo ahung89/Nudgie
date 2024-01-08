@@ -35,12 +35,26 @@ class Goal(models.Model):
         return f"{self.goal_name=} {self.goal_start_date=} {self.goal_end_date=}"
 
 
+class Task(models.Model):
+    goal = models.ForeignKey(
+        Goal, related_name="tasks", on_delete=models.CASCADE, null=True
+    )
+    task_name = models.CharField(max_length=100)
+
+    class Meta:
+        unique_together = ["goal", "task_name"]
+
+
 class NudgieTask(models.Model):
     user = models.ForeignKey(User, related_name="tasks", on_delete=models.CASCADE)
     # eventually i'm going to want to store a description of the habit and goal, for
     # richer detailing.
-    task_name = models.CharField(max_length=100)
-    goal_name = models.CharField(max_length=100)
+    task = models.ForeignKey(
+        Task, related_name="nudgie_tasks", on_delete=models.CASCADE, null=True
+    )
+    goal = models.ForeignKey(
+        Goal, related_name="nudgie_tasks", on_delete=models.CASCADE, null=True
+    )
     due_date = models.DateTimeField()
     completed = models.BooleanField(default=False)
 

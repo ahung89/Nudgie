@@ -23,7 +23,7 @@ CRONTAB_AI_STRUCT_KEY = "crontab"
 GOAL_NAME_AI_STRUCT_KEY = "goal_name"
 
 # NudgieTask fields
-NUDGIE_TASK_TASK_NAME_FIELD = "task_name"
+NUDGIE_TASK_TASK_NAME_FIELD = "task__task_name"
 NUDGIE_TASK_DUE_DATE_FIELD = "due_date"
 
 # ChatGPT task identification message key

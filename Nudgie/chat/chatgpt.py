@@ -53,19 +53,21 @@ from Nudgie.constants import (
     DIALOGUE_TYPE_REMINDER,
     DIALOGUE_TYPE_SYSTEM_MESSAGE,
     DIALOGUE_TYPE_USER_INPUT,
-    GOAL_END_DATE_FIELD,
+    GOAL_NAME_AI_STRUCT_KEY,
     NUDGIE_TASK_DUE_DATE_FIELD,
     NUDGIE_TASK_TASK_NAME_FIELD,
     OPENAI_FUNCTIONS_FIELD,
     OPENAI_MESSAGE_FIELD,
     OPENAI_MODEL_FIELD,
     PENDING_TASKS_KEY,
+    REMINDER_DATA_AI_STRUCT_KEY,
     TASK_IDENTIFICATION_CERTAINTY_SCORE,
     TASK_IDENTIFICATION_NUDGIE_TASK_ID,
     TASK_IDENTIFICATION_REASONING,
+    TASK_NAME_AI_STRUCT_KEY,
 )
 from Nudgie.goals.goals import create_goal, get_current_goal
-from Nudgie.models import CachedApiResponse, Goal, NudgieTask
+from Nudgie.models import CachedApiResponse, Goal, NudgieTask, Task
 from Nudgie.scheduling.periodic_task_helper import TaskData
 from Nudgie.scheduling.scheduler import (
     schedule_goal_end,
@@ -170,6 +172,14 @@ def generate_chatgpt_function_success_message(
     return message
 
 
+def handle_task_creation(crontab_list) -> None:
+    for schedule in crontab_list:
+        Task.objects.create(
+            task_name=schedule[REMINDER_DATA_AI_STRUCT_KEY][TASK_NAME_AI_STRUCT_KEY],
+            goal=Goal.objects.get(name=schedule[GOAL_NAME_AI_STRUCT_KEY]),
+        )
+
+
 def handle_goal_creation(user: User, goal_name: str, goal_length_days: int) -> None:
     """Create goal and schedule event for goal end"""
     goal = create_goal(
@@ -197,6 +207,12 @@ def handle_chatgpt_function_call(
     Handles a function call from the OpenAI API, returns the response.
     """
     if function_name == CHATGPT_INITIAL_GOAL_SETUP:
+        handle_goal_creation(
+            user,
+            function_args[CHATGPT_GOAL_NAME_KEY],
+            function_args[CHATGPT_GOAL_LENGTH_DAYS],
+        )
+        handle_task_creation(function_args[CHATGPT_SCHEDULES_KEY])
         schedule_tasks_from_crontab_list(
             function_args[CHATGPT_SCHEDULES_KEY],
             function_args[CHATGPT_GOAL_NAME_KEY],
@@ -204,11 +220,6 @@ def handle_chatgpt_function_call(
         )
         generate_chatgpt_function_success_message(
             CHATGPT_INITIAL_GOAL_SETUP, user, True, messages
-        )
-        handle_goal_creation(
-            user,
-            function_args[CHATGPT_GOAL_NAME_KEY],
-            function_args[CHATGPT_GOAL_LENGTH_DAYS],
         )
 
         # Generate a response to the user based on the function call.
@@ -430,7 +441,9 @@ def handle_convo(
 
     api_messages = add_system_message(messages, should_enter_goal_setup_convo, user)
 
-    response = call_openai_api(api_messages, get_functions(should_enter_goal_setup_convo))
+    response = call_openai_api(
+        api_messages, get_functions(should_enter_goal_setup_convo)
+    )
 
     # Handle function call, if necessary
     if has_function_call(response):

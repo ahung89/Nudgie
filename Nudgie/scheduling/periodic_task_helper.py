@@ -7,7 +7,6 @@ from django_celery_beat.models import CrontabSchedule, PeriodicTask
 from Nudgie.constants import (
     CRONTAB_AI_STRUCT_KEY,
     DIALOGUE_TYPE_REMINDER,
-    GOAL_NAME_AI_STRUCT_KEY,
     PERIODIC_TASK_CRONTAB_FIELD,
     REMINDER_DATA_AI_STRUCT_KEY,
     REMINDER_NOTES_AI_STRUCT_KEY,

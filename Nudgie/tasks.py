@@ -37,7 +37,7 @@ from .scheduling.periodic_task_helper import (
 def get_nudgie_task(task_name: str, user_id: str, due_date: datetime) -> NudgieTask:
     """Queries DB for a single NudgieTask object."""
     filtered_tasks = NudgieTask.objects.filter(
-        task_name=task_name, user_id=user_id, due_date=due_date
+        task__task_name=task_name, user_id=user_id, due_date=due_date
     )
 
     assert len(filtered_tasks) == 1, f"expected 1 task, got {len(filtered_tasks)}"

@@ -14,7 +14,7 @@ from Nudgie.constants import (
     QUEUE_NAME,
     REMINDER_HANDLER,
 )
-from Nudgie.models import NudgieTask
+from Nudgie.models import NudgieTask, Task
 from Nudgie.scheduling.periodic_task_helper import (
     TaskData,
     convert_chatgpt_task_data_to_task_data,
@@ -46,9 +46,10 @@ def schedule_nudgie_task(task_data: TaskData) -> None:
     deadline job is also scheduled. This deadline job, when triggered, will notify the user that he failed to complete the
     task on time."""
     user = User.objects.get(id=task_data.user_id)
+    task = Task.objects.get(name=task_data.task_name, goal=task_data.goal_name)
     NudgieTask.objects.create(
         user=user,
-        task_name=task_data.task_name,
+        task=task,
         goal_name=task_data.goal_name,
         due_date=task_data.due_date,
     )
